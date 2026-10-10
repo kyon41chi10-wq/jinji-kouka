@@ -664,7 +664,7 @@ h3.sec{font-size:16px;margin:0 0 10px}
     var html = '<div class="card"><h3 class="sec">職員を追加</h3><form class="addrow" id="addStaff"><label>氏名<input type="text" id="nsName" maxlength="40" required></label>' +
       '<label>入社日（任意）<input type="date" id="nsHire"></label><button class="btn primary" type="submit">追加</button></form>' +
       (S.data.board_staff_available ? '<p class="hint" style="margin:12px 0 0">「スタッフ個別評価ボード」に登録されている職員が <b>' + S.data.board_staff_available + ' 人</b> います。<button class="linkbtn" id="importBoard">まとめて取り込む</button></p>' : "") + "</div>";
-    html += '<div class="card"><h3 class="sec">職員一覧と個人用URL</h3><p class="hint" style="margin-top:0">「コピー」を押して、本人にLINE等で送ってください。URLを知っている人はその職員として入力できるため、本人以外には送らないでください。漏れた場合は「URL再発行」で古いURLを無効にできます。<br>氏名・入社日・在籍は、書き換えると自動で保存されます。</p>' +
+    html += '<div class="card"><h3 class="sec">職員一覧と個人用URL</h3><p class="hint" style="margin-top:0">「コピー」を押して、本人にSlackのDMで送ってください。URLを知っている人はその職員として入力できるため、本人以外には送らないでください。漏れた場合は「URL再発行」で古いURLを無効にできます。<br>氏名・入社日・在籍は、書き換えると自動で保存されます。</p>' +
       '<div class="tablebox"><table class="list"><thead><tr><th>氏名</th><th>入社日</th><th class="c">在籍</th><th>個人用URL</th><th></th></tr></thead><tbody>' +
       (st.map(function (s) {
         var cAt = copiedMap()[s.link_key];
