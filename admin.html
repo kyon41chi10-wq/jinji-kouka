@@ -114,7 +114,9 @@ table.list tbody tr.click:hover{background:var(--ai-soft)}
 /* 職員・期 */
 .addrow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
 .addrow label{display:grid;gap:4px;font-size:13px;font-weight:700}
-.urlcell{display:flex;gap:6px;flex-wrap:wrap}
+.urlcell{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.btn.copied{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.copied-at{font-size:12px;color:var(--good)}
 .itemed{display:grid;gap:10px}
 .itemed .ie{display:grid;grid-template-columns:2.4em 1fr auto;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px}
 .itemed .ie .n{font-family:var(--display);font-weight:700;color:var(--ai);padding-top:8px;text-align:center}
@@ -254,6 +256,9 @@ h3.sec{font-size:16px;margin:0 0 10px}
     var d = b - a;
     return '<span class="' + (d > 0 ? "diff-pos" : d < 0 ? "diff-neg" : "muted") + '">' + (d > 0 ? "+" : "") + d + "</span>";
   }
+  var COPIED_KEY = "kouka-admin-copied";
+  function copiedMap() { try { return JSON.parse(K.load(COPIED_KEY) || "{}"); } catch (_) { return {}; } }
+  function markCopied(key) { var m = copiedMap(); m[key] = new Date().toISOString(); K.store(COPIED_KEY, JSON.stringify(m)); }
   function names() { try { return JSON.parse(K.load(NAMES_KEY) || "{}"); } catch (_) { return {}; } }
 
   /* ---------- ログイン ---------- */
@@ -659,16 +664,19 @@ h3.sec{font-size:16px;margin:0 0 10px}
     var html = '<div class="card"><h3 class="sec">職員を追加</h3><form class="addrow" id="addStaff"><label>氏名<input type="text" id="nsName" maxlength="40" required></label>' +
       '<label>入社日（任意）<input type="date" id="nsHire"></label><button class="btn primary" type="submit">追加</button></form>' +
       (S.data.board_staff_available ? '<p class="hint" style="margin:12px 0 0">「スタッフ個別評価ボード」に登録されている職員が <b>' + S.data.board_staff_available + ' 人</b> います。<button class="linkbtn" id="importBoard">まとめて取り込む</button></p>' : "") + "</div>";
-    html += '<div class="card"><h3 class="sec">職員一覧と個人用URL</h3><p class="hint" style="margin-top:0">個人用URLを本人にLINE等で送ってください。URLを知っている人はその職員として入力できるため、本人以外には送らないでください。漏れた場合は「URL再発行」で古いURLを無効にできます。</p>' +
+    html += '<div class="card"><h3 class="sec">職員一覧と個人用URL</h3><p class="hint" style="margin-top:0">「コピー」を押して、本人にLINE等で送ってください。URLを知っている人はその職員として入力できるため、本人以外には送らないでください。漏れた場合は「URL再発行」で古いURLを無効にできます。<br>氏名・入社日・在籍は、書き換えると自動で保存されます。</p>' +
       '<div class="tablebox"><table class="list"><thead><tr><th>氏名</th><th>入社日</th><th class="c">在籍</th><th>個人用URL</th><th></th></tr></thead><tbody>' +
       (st.map(function (s) {
+        var cAt = copiedMap()[s.link_key];
         return '<tr data-sid="' + s.id + '"><td><input type="text" class="sName" value="' + esc(s.name) + '" maxlength="40" style="width:10em"></td>' +
           '<td><input type="date" class="sHire" value="' + esc(s.hire_date || "") + '"></td>' +
           '<td class="c"><input type="checkbox" class="sActive"' + (s.active ? " checked" : "") + ' aria-label="在籍"></td>' +
-          '<td><div class="urlcell"><button class="btn small" data-act="copy">コピー</button><a class="btn small" target="_blank" rel="noopener" href="https://line.me/R/msg/text/?' + encodeURIComponent(s.name + "さん\n人事考課表の入力をお願いします。\n" + staffUrl(s)) + '">LINEで送る</a><button class="btn small" data-act="open">開く</button><button class="linkbtn" data-act="regen">URL再発行</button></div></td>' +
-          '<td><div class="urlcell"><button class="btn small primary" data-act="save">保存</button><button class="linkbtn" data-act="remove" style="color:var(--bad)">外す</button></div></td></tr>';
+          '<td><div class="urlcell"><button class="btn small' + (cAt ? " copied" : "") + '" data-act="copy">' + (cAt ? "✓ コピー済み" : "コピー") + "</button>" +
+          (cAt ? '<span class="copied-at">' + esc(K.fmtDateTime(cAt)) + "</span>" : "") +
+          '<button class="btn small" data-act="open">開く</button><button class="linkbtn" data-act="regen">URL再発行</button></div></td>' +
+          '<td><button class="linkbtn" data-act="remove" style="color:var(--bad)">外す</button></td></tr>';
       }).join("") || '<tr><td colspan="5" class="muted">まだ登録されていません。</td></tr>') + "</tbody></table></div>" +
-      '<p class="hint">「在籍」のチェックを外すと、その職員のURLは使えなくなり、一覧にも表示されません（過去のデータは残ります）。</p></div>';
+      '<p class="hint">「在籍」のチェックを外すと、その職員のURLは使えなくなります（過去のデータは残ります）。「外す」は退職者などを一覧から消したいときに使います。</p></div>';
     $("tab-staff").innerHTML = html;
   }
   $("tab-staff").addEventListener("submit", function (e) {
@@ -679,6 +687,22 @@ h3.sec{font-size:16px;margin:0 0 10px}
       return refresh();
     }).then(function () { toast("追加しました"); var n = $("nsName"); if (n) n.focus(); }, function (err) { toast(err.message); });
   });
+  $("tab-staff").addEventListener("change", function (e) {
+    var tr = e.target.closest("tr[data-sid]"); if (!tr || !e.target.matches(".sName, .sHire, .sActive")) return;
+    var s = staffById(tr.getAttribute("data-sid"));
+    var name = tr.querySelector(".sName").value.trim();
+    if (!name) { tr.querySelector(".sName").value = s.name; toast("氏名は空にできません"); return; }
+    var go = Promise.resolve(true);
+    if (e.target.matches(".sActive") && !e.target.checked) {
+      go = ask("在籍を外しますか？", "<p>" + esc(s.name) + " さんのURLが使えなくなります（過去のデータは残ります）。もう一度チェックを入れると、同じURLで使えるようになります。</p>", "在籍を外す");
+    }
+    go.then(function (ok) {
+      if (!ok) { e.target.checked = true; return; }
+      return action("staff_save", { id: s.id, name: name, hire_date: tr.querySelector(".sHire").value, active: tr.querySelector(".sActive").checked })
+        .then(function (res) { if (!res.ok) throw new Error("保存できませんでした"); return refresh(); })
+        .then(function () { toast("保存しました"); });
+    }).catch(function (err) { toast(err.message); });
+  });
   $("tab-staff").addEventListener("click", function (e) {
     if (e.target.id === "importBoard") {
       action("staff_import_board").then(function (res) { return refresh().then(function () { toast((res.added || 0) + " 人を取り込みました"); }); }, function (err) { toast(err.message); });
@@ -688,12 +712,11 @@ h3.sec{font-size:16px;margin:0 0 10px}
     var tr = b.closest("tr"), s = staffById(tr.getAttribute("data-sid")), act = b.getAttribute("data-act");
     if (act === "copy") {
       var url = staffUrl(s);
-      (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast(s.name + " さんのURLをコピーしました"); }, function () { window.prompt("URLをコピーしてください", url); });
+      (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () {
+        markCopied(s.link_key); renderStaff(); toast(s.name + " さんのURLをコピーしました");
+      }, function () { window.prompt("URLをコピーしてください", url); markCopied(s.link_key); renderStaff(); });
     } else if (act === "open") {
       window.open(staffUrl(s), "_blank", "noopener");
-    } else if (act === "save") {
-      action("staff_save", { id: s.id, name: tr.querySelector(".sName").value, hire_date: tr.querySelector(".sHire").value, active: tr.querySelector(".sActive").checked })
-        .then(function (res) { if (!res.ok) throw new Error("保存できませんでした"); return refresh(); }).then(function () { toast("保存しました"); }, function (err) { toast(err.message); });
     } else if (act === "regen") {
       ask("URLを再発行しますか？", "<p>" + esc(s.name) + " さんの今のURLは使えなくなります。新しいURLを本人に送り直してください。</p>", "再発行する").then(function (ok) {
         if (!ok) return;
