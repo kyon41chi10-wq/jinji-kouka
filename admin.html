@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>人事考課 管理｜京町亭</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2324507A'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif'%3E京%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<link rel="stylesheet" href="kouka.css">
+<style>
+body{font-size:15px;line-height:1.65}
+.wrap{max-width:1100px;padding-bottom:100px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:20px 0 12px}
+.top .brand{margin-right:auto}
+.top .brand h1{font-size:22px}
+.top select{font-weight:700}
+.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
+.tabs button{appearance:none;border:0;background:none;padding:10px 14px;font-weight:700;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1.5px;cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected=true]{color:var(--ai);border-bottom-color:var(--ai)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.tile .k{font-size:12.5px;color:var(--muted)}
+.tile .v{font-family:var(--display);font-size:26px;font-weight:700;line-height:1.3}
+.tile .v small{font-size:13px;color:var(--muted);font-family:var(--body);font-weight:400;margin-left:4px}
+.tile.self .v{color:var(--self)} .tile.first .v{color:var(--first)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.toolbar .sp{margin-right:auto}
+.tablebox{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+table.list{border-collapse:collapse;width:100%;min-width:640px}
+table.list th,table.list td{padding:9px 12px;border-bottom:1px solid var(--grid);text-align:left;vertical-align:middle}
+table.list th{font-size:12.5px;color:var(--muted);font-weight:700;background:var(--surface-2);white-space:nowrap}
+table.list tr:last-child td{border-bottom:0}
+table.list td.r,table.list th.r{text-align:right}
+table.list td.c,table.list th.c{text-align:center}
+table.list tbody tr.click{cursor:pointer}
+table.list tbody tr.click:hover{background:var(--ai-soft)}
+.badge{display:inline-block;border-radius:999px;padding:1px 10px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.b-none{background:var(--grid);color:var(--muted)}
+.b-draft{background:var(--warn-soft);color:var(--warn)}
+.b-sub{background:var(--self-soft);color:var(--self)}
+.b-done{background:var(--good-soft);color:var(--good)}
+.selfc{color:var(--self);font-weight:700} .firstc{color:var(--first);font-weight:700}
+.diff-pos{color:var(--good)} .diff-neg{color:var(--bad)}
+.muted{color:var(--muted)}
+
+/* 詳細 */
+.dhead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:14px}
+.dhead h2{font-size:24px}
+.dhead .sp{margin-right:auto}
+.dgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.etable{border-collapse:collapse;width:100%}
+.etable td,.etable th{border-bottom:1px solid var(--grid);padding:8px 8px;vertical-align:top;text-align:left}
+.etable th{font-size:12px;color:var(--muted);background:var(--surface-2);white-space:nowrap}
+.etable .catrow td{background:var(--surface-2);font-weight:700;color:var(--ai);font-size:13.5px;padding:6px 10px}
+.etable .no{width:2.2em;color:var(--ai);font-family:var(--display);font-weight:700;text-align:center}
+.etable .txt .sub{display:block;font-size:12.5px;color:var(--muted)}
+.etable .sc{width:1%;white-space:nowrap}
+.etable .prev{width:3.2em;text-align:center;color:var(--muted);font-size:13px}
+.mini{display:inline-flex;gap:3px}
+.mini button{appearance:none;width:34px;height:34px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface-2);font-weight:700;font-family:var(--display);cursor:pointer;padding:0}
+.mini.self button.on{background:var(--self);border-color:var(--self);color:#fff}
+.mini.first button.on{background:var(--first);border-color:var(--first);color:#fff}
+.mini button:hover{border-color:var(--ai)}
+.scorechip{display:inline-grid;place-items:center;min-width:34px;height:34px;border-radius:8px;font-weight:700;font-family:var(--display);background:var(--self-soft);color:var(--self)}
+.scorechip.empty{background:var(--grid);color:var(--muted)}
+.diffmark{font-size:12px;margin-left:4px}
+@media (max-width:760px){
+  .etable thead{display:none}
+  .etable tr.itemrow{display:grid;grid-template-columns:2.2em 1fr;padding:8px 0;border-bottom:1px solid var(--grid)}
+  .etable tr.itemrow td{border:0;padding:3px 6px}
+  .etable tr.itemrow td.txt{grid-column:2}
+  .etable tr.itemrow td.sc,.etable tr.itemrow td.prev{grid-column:2;width:auto;text-align:left}
+  .etable tr.itemrow td.sc::before{content:attr(data-l);display:inline-block;width:3.2em;font-size:12px;color:var(--muted)}
+  .etable tr.itemrow td.prev::before{content:"前回1次 ";font-size:12px}
+  .etable .catrow{display:block}
+  .etable .catrow td{display:block}
+}
+.qa{border-top:1px solid var(--grid);padding:12px 0}
+.qa:first-of-type{border-top:0}
+.qa .q{font-weight:700;font-size:14px}
+.qa .q .tag{display:inline-block;background:var(--ai-soft);color:var(--ai);border-radius:6px;padding:0 8px;margin-right:6px;font-size:12.5px}
+.qa .a{white-space:pre-wrap;margin-top:4px;overflow-wrap:anywhere}
+.qa .a.empty{color:var(--muted)}
+.frow{display:flex;flex-wrap:wrap;gap:10px 16px;margin-bottom:10px}
+.frow label{display:grid;gap:4px;font-size:13px;font-weight:700;color:var(--ink-2)}
+.savebar{position:sticky;bottom:0;margin-top:16px;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;box-shadow:var(--shadow);z-index:5}
+.savebar .sp{margin-right:auto}
+.dirty-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn);margin-right:6px}
+
+/* グラフ */
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:var(--body);font-size:12px;fill:var(--muted)}
+.chart .grid{stroke:var(--grid)}
+.chart .lself{stroke:var(--self);fill:none;stroke-width:2.5}
+.chart .lfirst{stroke:var(--first);fill:none;stroke-width:2.5}
+.chart .pself{fill:var(--self)} .chart .pfirst{fill:var(--first)}
+.chart .vself{fill:var(--self);font-weight:700} .chart .vfirst{fill:var(--first);font-weight:700}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--ink-2);margin:4px 0 8px}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.catbars{display:grid;gap:8px}
+.catbar{display:grid;grid-template-columns:minmax(120px,15em) 1fr;gap:4px 12px;align-items:center;font-size:13.5px}
+.catbar .bars{display:grid;gap:3px}
+.catbar .b{height:10px;border-radius:5px;position:relative;background:var(--grid)}
+.catbar .b i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.catbar .b.s i{background:var(--self)} .catbar .b.f i{background:var(--first)}
+.catbar .vals{font-size:12px;color:var(--muted)}
+.matrix td.cell{white-space:nowrap;text-align:center;cursor:pointer}
+.matrix td.cell:hover{background:var(--ai-soft)}
+
+/* 職員・期 */
+.addrow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.addrow label{display:grid;gap:4px;font-size:13px;font-weight:700}
+.urlcell{display:flex;gap:6px;flex-wrap:wrap}
+.itemed{display:grid;gap:10px}
+.itemed .ie{display:grid;grid-template-columns:2.4em 1fr auto;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.itemed .ie .n{font-family:var(--display);font-weight:700;color:var(--ai);padding-top:8px;text-align:center}
+.itemed .ie .f{display:grid;gap:6px}
+.itemed .ie .f .two{display:grid;grid-template-columns:1fr 9em;gap:6px}
+.itemed .ie textarea{min-height:44px;height:44px;font-size:15px}
+.itemed .ie input,.itemed .ie select{font-size:14px;padding:6px 10px;width:100%}
+.itemed .ie .ops{display:grid;gap:4px;align-content:start}
+.itemed .ie .ops button{min-height:30px;padding:2px 8px;font-size:13px}
+.lbl{font-size:12px;color:var(--muted)}
+.login{max-width:380px;margin:12vh auto 0}
+.login form{display:grid;gap:12px}
+.login input{width:100%}
+.err{color:var(--bad);font-size:14px;min-height:1.4em}
+h3.sec{font-size:16px;margin:0 0 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="login card" id="loginView" hidden>
+    <div class="facility">京町亭</div>
+    <h1 style="font-size:24px;margin-bottom:14px">人事考課 管理</h1>
+    <form id="loginForm">
+      <label for="pw" class="hint" style="font-size:14px">パスワード</label>
+      <input type="password" id="pw" autocomplete="current-password" required>
+      <button class="btn primary" type="submit">ログイン</button>
+      <div class="err" id="loginErr" role="alert"></div>
+    </form>
+  </section>
+
+  <div id="mainView" hidden>
+    <div class="top">
+      <div class="brand"><div class="facility">京町亭</div><h1>人事考課 管理</h1></div>
+      <select id="periodSel" aria-label="評価期間"></select>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-tab="list" aria-selected="true">提出状況・集計</button>
+      <button role="tab" data-tab="trend" aria-selected="false">推移・比較</button>
+      <button role="tab" data-tab="staff" aria-selected="false">職員とURL</button>
+      <button role="tab" data-tab="periods" aria-selected="false">期・評価項目</button>
+      <button role="tab" data-tab="settings" aria-selected="false">設定</button>
+    </nav>
+
+    <section id="tab-list" class="tabpane"></section>
+    <section id="tab-detail" class="tabpane" hidden></section>
+    <section id="tab-trend" class="tabpane" hidden></section>
+    <section id="tab-staff" class="tabpane" hidden></section>
+    <section id="tab-periods" class="tabpane" hidden></section>
+    <section id="tab-settings" class="tabpane" hidden>
+      <div class="card" style="max-width:520px">
+        <h3 class="sec">パスワードの変更</h3>
+        <form id="pwForm" style="display:grid;gap:10px">
+          <input type="password" id="pwCur" placeholder="今のパスワード" autocomplete="current-password" required>
+          <input type="password" id="pwNew" placeholder="新しいパスワード（8文字以上）" autocomplete="new-password" minlength="8" required>
+          <button class="btn primary" type="submit">変更する</button>
+          <div class="err" id="pwMsg" role="status"></div>
+        </form>
+      </div>
+      <div class="card" style="max-width:520px">
+        <h3 class="sec">ログアウト</h3>
+        <p class="hint" style="margin-top:0">共用のパソコンで使った場合はログアウトしてください。</p>
+        <button class="btn" id="logoutBtn" type="button">ログアウト</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<dialog id="dlg"><form method="dialog" class="dlg"><h3 id="dlgT"></h3><div id="dlgB"></div><div class="acts"><button class="btn" value="cancel" id="dlgCancel">やめる</button><button class="btn primary" value="ok" id="dlgOk">OK</button></div></form></dialog>
+
+<script src="kouka.js"></script>
+<script>
+(function () {
+  "use strict";
+  var K = KOUKA, $ = K.$, esc = K.esc;
+  var TOKEN_KEY = "kouka-admin-token", NAMES_KEY = "kouka-admin-names";
+  var S = { token: null, data: null, periodId: null, tab: "list", detail: null, trendStaff: null, editPeriod: null };
+
+  /* ---------- 共通 ---------- */
+  function toast(msg) {
+    Array.prototype.forEach.call(document.querySelectorAll(".toast"), function (x) { x.remove(); });
+    var t = document.createElement("div");
+    t.className = "toast"; t.textContent = msg; t.setAttribute("role", "status");
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2800);
+  }
+  function ask(title, bodyHtml, okLabel, danger) {
+    return new Promise(function (resolve) {
+      $("dlgT").textContent = title; $("dlgB").innerHTML = bodyHtml || "";
+      $("dlgOk").textContent = okLabel || "OK";
+      $("dlgOk").className = "btn " + (danger ? "danger" : "primary");
+      $("dlg").returnValue = "";
+      $("dlg").showModal();
+      $("dlg").addEventListener("close", function h() { $("dlg").removeEventListener("close", h); resolve($("dlg").returnValue === "ok"); });
+    });
+  }
+  function readToken() {
+    try { var t = JSON.parse(K.load(TOKEN_KEY) || "null"); if (t && t.token && new Date(t.expires_at) > new Date()) return t.token; } catch (_) {}
+    return null;
+  }
+  function action(name, args) {
+    return K.rpc("kouka_admin_action", { p_token: S.token, p_action: name, p_args: args || {} }).then(function (res) {
+      if (res && res.error === "unauthorized") { logoutLocal(); throw new Error("ログインの有効期限が切れました。もう一度ログインしてください。"); }
+      return res;
+    });
+  }
+  function refresh() {
+    return K.rpc("kouka_admin_data", { p_token: S.token }).then(function (res) {
+      if (res.error === "unauthorized") { logoutLocal(); return; }
+      S.data = res;
+      if (!S.periodId || !periodById(S.periodId)) { var op = res.periods.filter(function (p) { return p.is_open; })[0] || res.periods[0]; S.periodId = op && op.id; }
+      renderPeriodSel();
+      render();
+    });
+  }
+  function periodById(id) { return (S.data.periods || []).filter(function (p) { return p.id === id; })[0]; }
+  function staffById(id) { return (S.data.staff || []).filter(function (s) { return s.id === id; })[0]; }
+  function evalOf(pid, sid) { return (S.data.evaluations || []).filter(function (e) { return e.period_id === pid && e.staff_id === sid; })[0]; }
+  function chrono() { return (S.data.periods || []).slice().sort(function (a, b) { return a.year - b.year || a.half - b.half; }); }
+  function prevPeriod(p) {
+    var c = chrono(), i = c.findIndex(function (x) { return x.id === p.id; });
+    return i > 0 ? c[i - 1] : null;
+  }
+  function staffForPeriod(pid) {
+    return (S.data.staff || []).filter(function (s) { return s.active || evalOf(pid, s.id); });
+  }
+  function statusOf(ev, p) {
+    if (!ev) return { key: "none", label: "未着手", cls: "b-none" };
+    if (ev.status !== "submitted") return { key: "draft", label: "記入中", cls: "b-draft" };
+    if (K.total(ev.first_scores, p.items).complete) return { key: "done", label: "評価済", cls: "b-done" };
+    return { key: "sub", label: "提出済", cls: "b-sub" };
+  }
+  function staffUrl(s) { return new URL("./?k=" + s.link_key, location.href).href; }
+  function fmtNum(n, d) { return n == null || isNaN(n) ? "–" : n.toFixed(d == null ? 1 : d); }
+  function diffHtml(a, b) {
+    if (a == null || b == null) return '<span class="muted">–</span>';
+    var d = b - a;
+    return '<span class="' + (d > 0 ? "diff-pos" : d < 0 ? "diff-neg" : "muted") + '">' + (d > 0 ? "+" : "") + d + "</span>";
+  }
+  function names() { try { return JSON.parse(K.load(NAMES_KEY) || "{}"); } catch (_) { return {}; } }
+
+  /* ---------- ログイン ---------- */
+  function showLogin() { $("loginView").hidden = false; $("mainView").hidden = true; setTimeout(function () { $("pw").focus(); }, 50); }
+  function logoutLocal() { S.token = null; K.store(TOKEN_KEY, null); showLogin(); }
+  $("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    $("loginErr").textContent = "";
+    var btn = e.target.querySelector("button"); btn.disabled = true;
+    K.rpc("kouka_admin_login", { p_password: $("pw").value }).then(function (res) {
+      btn.disabled = false;
+      if (res.ok) {
+        S.token = res.token; K.store(TOKEN_KEY, JSON.stringify({ token: res.token, expires_at: res.expires_at }));
+        $("pw").value = ""; start();
+      } else {
+        $("loginErr").textContent = res.error === "locked" ? "失敗が続いたため15分間ロックされています。" : "パスワードが違います。";
+      }
+    }, function (err) { btn.disabled = false; $("loginErr").textContent = err.message; });
+  });
+  $("logoutBtn").addEventListener("click", function () { action("logout").catch(function () {}); logoutLocal(); });
+  $("pwForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    action("change_password", { current: $("pwCur").value, new: $("pwNew").value }).then(function (res) {
+      $("pwMsg").style.color = res.ok ? "var(--good)" : "var(--bad)";
+      $("pwMsg").textContent = res.ok ? "変更しました。他の端末はログアウトされます。" : res.error === "wrong_password" ? "今のパスワードが違います。" : res.error === "too_short" ? "8文字以上にしてください。" : "変更できませんでした。";
+      if (res.ok) { $("pwCur").value = ""; $("pwNew").value = ""; }
+    }, function (err) { $("pwMsg").textContent = err.message; });
+  });
+
+  function start() {
+    $("loginView").hidden = true; $("mainView").hidden = false;
+    $("tab-list").innerHTML = '<div class="notice">読み込み中…</div>';
+    refresh().catch(function (e) { $("tab-list").innerHTML = '<div class="notice bad">' + esc(e.message) + "</div>"; });
+  }
+
+  /* ---------- 画面切り替え ---------- */
+  function renderPeriodSel() {
+    $("periodSel").innerHTML = (S.data.periods || []).map(function (p) {
+      return '<option value="' + p.id + '"' + (p.id === S.periodId ? " selected" : "") + ">" + esc(p.title) + (p.is_open ? "（受付中）" : "") + "</option>";
+    }).join("");
+  }
+  $("periodSel").addEventListener("change", function () {
+    if (!confirmLeaveDetail()) { renderPeriodSel(); return; }
+    S.periodId = $("periodSel").value;
+    if (S.tab === "detail") { var sid = S.detail.staffId; openDetail(sid); } else render();
+  });
+  $("tabs").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-tab]"); if (!b) return;
+    if (!confirmLeaveDetail()) return;
+    S.tab = b.getAttribute("data-tab"); S.detail = null; render();
+  });
+  function confirmLeaveDetail() {
+    if (S.tab === "detail" && S.detail && S.detail.dirty) return window.confirm("保存していない変更があります。破棄して移動しますか？");
+    return true;
+  }
+  window.addEventListener("beforeunload", function (e) { if (S.tab === "detail" && S.detail && S.detail.dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+  function render() {
+    var tabKey = S.tab === "detail" ? "list" : S.tab;
+    Array.prototype.forEach.call(document.querySelectorAll("#tabs button"), function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-tab") === tabKey)); });
+    ["list", "detail", "trend", "staff", "periods", "settings"].forEach(function (t) { $("tab-" + t).hidden = t !== S.tab; });
+    if (!S.data) return;
+    if (!S.data.periods.length && (S.tab === "list" || S.tab === "trend")) {
+      $("tab-" + S.tab).innerHTML = '<div class="notice">評価期間がありません。「期・評価項目」タブで作成してください。</div>';
+      if (S.tab !== "periods") return;
+    }
+    if (S.tab === "list") renderList();
+    else if (S.tab === "detail") renderDetail();
+    else if (S.tab === "trend") renderTrend();
+    else if (S.tab === "staff") renderStaff();
+    else if (S.tab === "periods") renderPeriods();
+  }
+
+  /* ========== 一覧 ========== */
+  function renderList() {
+    var p = periodById(S.periodId); if (!p) return;
+    var rows = staffForPeriod(p.id), cnt = { none: 0, draft: 0, sub: 0, done: 0 }, selfS = [], firstS = [];
+    var body = rows.map(function (s) {
+      var ev = evalOf(p.id, s.id), st = statusOf(ev, p);
+      cnt[st.key]++;
+      var ts = ev ? K.total(ev.self_scores, p.items) : null, tf = ev ? K.total(ev.first_scores, p.items) : null;
+      if (ts && ts.complete) selfS.push(ts.sum);
+      if (tf && tf.complete) firstS.push(tf.sum);
+      var sv = ts && ts.n ? ts.sum : null, fv = tf && tf.n ? tf.sum : null;
+      return '<tr class="click" data-open="' + s.id + '"><td><b>' + esc(s.name) + "</b>" + (s.active ? "" : ' <span class="hint">（休止）</span>') + "</td>" +
+        '<td><span class="badge ' + st.cls + '">' + st.label + "</span></td>" +
+        '<td class="r num selfc">' + (sv == null ? '<span class="muted">–</span>' : sv + (ts.complete ? "" : '<span class="hint">（' + ts.n + "項目）</span>")) + "</td>" +
+        '<td class="r num firstc">' + (fv == null ? '<span class="muted">–</span>' : fv + (tf.complete ? "" : '<span class="hint">（' + tf.n + "項目）</span>")) + "</td>" +
+        '<td class="r num">' + (sv != null && fv != null && ts.complete && tf.complete ? diffHtml(sv, fv) : '<span class="muted">–</span>') + "</td>" +
+        '<td class="num">' + esc(ev && ev.submitted_at ? K.fmtDateTime(ev.submitted_at) : "") + "</td>" +
+        '<td class="c">' + (ev && (ev.first_comment || ev.manager_comment) ? "✓" : "") + "</td></tr>";
+    }).join("");
+    var avg = function (a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; };
+    var max = p.items.length * 5;
+    $("tab-list").innerHTML =
+      '<div class="tiles">' +
+      '<div class="tile"><div class="k">提出済み</div><div class="v num">' + (cnt.sub + cnt.done) + "<small>/ " + rows.length + " 人</small></div></div>" +
+      '<div class="tile"><div class="k">記入中・未着手</div><div class="v num">' + (cnt.draft + cnt.none) + "<small>人</small></div></div>" +
+      '<div class="tile"><div class="k">第1次評価 済</div><div class="v num">' + cnt.done + "<small>人</small></div></div>" +
+      '<div class="tile self"><div class="k">本人計の平均</div><div class="v num">' + fmtNum(avg(selfS)) + "<small>/ " + max + "</small></div></div>" +
+      '<div class="tile first"><div class="k">第1次計の平均</div><div class="v num">' + fmtNum(avg(firstS)) + "<small>/ " + max + "</small></div></div>" +
+      "</div>" +
+      '<div class="toolbar"><span class="sp hint">' + (p.is_open ? "🟢 職員の入力を受付中" : "⚪ 受付は終了しています（職員は入力できません）") + '　行をクリックすると内容の確認・第1次評価・コメント入力ができます。</span>' +
+      '<button class="btn small" id="printAll">全員分を印刷</button><button class="btn small" id="csvBtn">CSV（Excel）出力</button></div>' +
+      '<div class="tablebox"><table class="list"><thead><tr><th>氏名</th><th>状態</th><th class="r">本人計</th><th class="r">第1次計</th><th class="r">差</th><th>提出日時</th><th class="c">コメント</th></tr></thead><tbody>' +
+      (body || '<tr><td colspan="7" class="muted">職員が登録されていません。「職員とURL」タブで登録してください。</td></tr>') + "</tbody></table></div>";
+    $("printAll").onclick = function () {
+      var list = rows.map(function (s) { return { period: p, staffName: s.name, ev: evalOf(p.id, s.id) }; }).filter(function (o) { return o.ev; });
+      if (!list.length) { toast("印刷できる考課表がまだありません"); return; }
+      K.printSheets(list);
+    };
+    $("csvBtn").onclick = function () { exportCsv(p, rows); };
+  }
+  $("tab-list").addEventListener("click", function (e) {
+    var tr = e.target.closest("[data-open]"); if (tr) openDetail(tr.getAttribute("data-open"));
+  });
+
+  function exportCsv(p, rows) {
+    var head = ["氏名", "状態", "勤続年数", "本人記入日", "本人計", "第1次計"];
+    p.items.forEach(function (it) { head.push("本人" + it.no); });
+    p.items.forEach(function (it) { head.push("第1次" + it.no); });
+    (p.questions || []).forEach(function (q) { head.push(K.qLabel(q.no)); });
+    head.push("自己評価コメント", "1次評価者", "1次評価者コメント", "管理者", "管理者コメント");
+    var lines = [head];
+    rows.forEach(function (s) {
+      var ev = evalOf(p.id, s.id) || {}, st = statusOf(evalOf(p.id, s.id), p);
+      var ts = K.total(ev.self_scores, p.items), tf = K.total(ev.first_scores, p.items);
+      var r = [s.name, st.label, ev.years || "", ev.self_date || "", ts.n ? ts.sum : "", tf.n ? tf.sum : ""];
+      p.items.forEach(function (it) { r.push((ev.self_scores || {})[it.no] || ""); });
+      p.items.forEach(function (it) { r.push((ev.first_scores || {})[it.no] || ""); });
+      (p.questions || []).forEach(function (q) { r.push((ev.answers || {})[q.no] || ""); });
+      r.push(ev.self_comment || "", ev.first_name || "", ev.first_comment || "", ev.manager_name || "", ev.manager_comment || "");
+      lines.push(r);
+    });
+    var csv = lines.map(function (r) { return r.map(function (v) { v = String(v == null ? "" : v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(","); }).join("\r\n");
+    var blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "人事考課_" + p.title.replace(/[\s　（）()～~]/g, "") + ".csv";
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  /* ========== 詳細（第1次評価・コメント） ========== */
+  function openDetail(staffId) {
+    var p = periodById(S.periodId), ev = evalOf(p.id, staffId) || {};
+    var nm = names();
+    S.detail = {
+      staffId: staffId, dirty: false, editSelf: false,
+      v: {
+        years: ev.years || "", self_date: ev.self_date || "", self_scores: Object.assign({}, ev.self_scores || {}),
+        answers: Object.assign({}, ev.answers || {}), self_comment: ev.self_comment || "",
+        first_scores: Object.assign({}, ev.first_scores || {}), first_name: ev.first_name || nm.first || "",
+        first_date: ev.first_date || "", first_comment: ev.first_comment || "",
+        manager_name: ev.manager_name || nm.manager || "", manager_comment: ev.manager_comment || ""
+      }
+    };
+    S.tab = "detail"; render(); window.scrollTo(0, 0);
+  }
+
+  function scoreButtons(kind, no, cur) {
+    return '<span class="mini ' + kind + '">' + [5, 4, 3, 2, 1].map(function (v) {
+      return '<button type="button" data-score="' + kind + '" data-no="' + no + '" data-v="' + v + '" class="' + (Number(cur) === v ? "on" : "") + '" aria-pressed="' + (Number(cur) === v) + '" aria-label="' + (kind === "self" ? "本人" : "第1次") + " " + no + "番 " + v + '">' + v + "</button>";
+    }).join("") + "</span>";
+  }
+
+  function renderDetail() {
+    var p = periodById(S.periodId), s = staffById(S.detail.staffId);
+    if (!p || !s) { S.tab = "list"; render(); return; }
+    var D = S.detail, v = D.v, ev = evalOf(p.id, s.id), st = statusOf(ev, p);
+    var pp = prevPeriod(p), pev = pp ? evalOf(pp.id, s.id) : null;
+    var ts = K.total(v.self_scores, p.items), tf = K.total(v.first_scores, p.items), max = p.items.length * 5;
+    var html = '<div class="dhead"><button class="btn small" id="backBtn">← 一覧へ</button><h2>' + esc(s.name) + '</h2><span class="badge ' + st.cls + '">' + st.label + "</span>" +
+      '<span class="sp hint">' + esc(p.title) + (ev && ev.submitted_at ? "・提出 " + esc(K.fmtDateTime(ev.submitted_at)) : "") + "</span>" +
+      '<button class="btn small" id="printOne">印刷（紙と同じ形）</button>' +
+      (ev && ev.status === "submitted" ? '<button class="btn small" id="returnBtn">本人に差し戻す</button>' : "") +
+      (ev && ev.status !== "submitted" ? '<button class="btn small" id="markSubBtn">提出済みにする</button>' : "") + "</div>";
+
+    html += '<div class="tiles">' +
+      '<div class="tile self"><div class="k">本人計</div><div class="v num" id="tSelf">' + (ts.n ? ts.sum : "–") + "<small>/ " + max + "</small></div></div>" +
+      '<div class="tile first"><div class="k">第1次計</div><div class="v num" id="tFirst">' + (tf.n ? tf.sum : "–") + "<small>/ " + max + "</small></div></div>" +
+      '<div class="tile"><div class="k">差（第1次−本人）</div><div class="v num" id="tDiff">' + (ts.n && tf.n ? diffHtml(ts.sum, tf.sum) : "–") + "</div></div>" +
+      '<div class="tile"><div class="k">前回 ' + (pp ? esc(pp.title.replace(/（.*$/, "")) : "") + '</div><div class="v num" style="font-size:18px">' +
+        (pev ? '<span class="selfc">' + (K.total(pev.self_scores, pp.items).sum || "–") + '</span> / <span class="firstc">' + (K.total(pev.first_scores, pp.items).sum || "–") + "</span>" : '<span class="muted">なし</span>') +
+        '</div></div><div class="tile"><div class="k">勤続年数</div><div class="v" style="font-size:18px">' + (esc(K.yearsText(v.years)) || "–") + "</div></div></div>";
+
+    var hist = chrono().filter(function (x) { return evalOf(x.id, s.id); });
+    if (hist.length >= 2) html += '<div class="card"><h3 class="sec">合計点の推移</h3>' + legendHtml() + chartSvg(hist, s.id) + "</div>";
+
+    html += '<div class="card" style="padding:0;overflow:hidden;margin-top:14px"><div style="padding:14px 16px 6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
+      '<h3 class="sec" style="margin:0;margin-right:auto">評価項目</h3>' +
+      '<label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="editSelf"' + (D.editSelf ? " checked" : "") + '> 本人記入欄も編集する（紙で提出された分の入力など）</label>' +
+      '<button class="btn small" id="copySelf" title="未入力の第1次を本人と同じ点で埋めます">未入力の第1次に本人の点をコピー</button></div>' +
+      '<table class="etable"><thead><tr><th class="no">№</th><th>評価の着眼点</th><th class="sc">本人</th><th class="sc">第１次</th><th class="prev">前回1次</th></tr></thead><tbody>';
+    K.groupItems(p.items).forEach(function (g) {
+      html += '<tr class="catrow"><td colspan="5">' + K.nl2br(g.cat) + "</td></tr>";
+      g.items.forEach(function (it) {
+        var sv = v.self_scores[it.no], fv = v.first_scores[it.no];
+        var pf = pev && pp ? (pev.first_scores || {})[it.no] : null;
+        var d = sv && fv ? fv - sv : 0;
+        html += '<tr class="itemrow" id="row' + it.no + '"><td class="no">' + it.no + '</td><td class="txt">' + K.nl2br(it.text) + (it.sub ? '<span class="sub">' + K.nl2br(it.sub) + "</span>" : "") + (it.q ? '<span class="sub"><b>' + K.qLabel(it.q) + "</b></span>" : "") + "</td>" +
+          '<td class="sc" data-l="本人">' + (D.editSelf ? scoreButtons("self", it.no, sv) : '<span class="scorechip' + (sv ? "" : " empty") + '">' + (sv || "–") + "</span>") + "</td>" +
+          '<td class="sc" data-l="第１次">' + scoreButtons("first", it.no, fv) + '<span class="diffmark" id="dm' + it.no + '">' + (d ? (d > 0 ? '<span class="diff-pos">+' + d + "</span>" : '<span class="diff-neg">' + d + "</span>") : "") + "</span></td>" +
+          '<td class="prev">' + (pf || "") + "</td></tr>";
+      });
+    });
+    html += "</tbody></table></div>";
+
+    // 本人の記入
+    html += '<div class="card"><h3 class="sec">本人の記入</h3>';
+    if (D.editSelf) {
+      html += '<div class="frow"><label>本人記入日<input type="date" data-f="self_date" value="' + esc(v.self_date) + '"></label><label>勤続年数<input type="text" data-f="years" value="' + esc(v.years) + '" style="width:8em"></label></div>';
+    } else if (v.self_date) {
+      html += '<p class="hint" style="margin-top:0">記入日 ' + esc(K.fmtYMD(v.self_date)) + "</p>";
+    }
+    (p.questions || []).forEach(function (q) {
+      var a = v.answers[q.no] || "";
+      html += '<div class="qa"><div class="q"><span class="tag">' + K.qLabel(q.no) + "</span>" + esc(q.text) + "</div>" +
+        (D.editSelf ? '<textarea data-ans="' + q.no + '" style="margin-top:6px;min-height:70px">' + esc(a) + "</textarea>" : '<div class="a' + (a ? "" : " empty") + '">' + (a ? esc(a) : "（記入なし）") + "</div>") + "</div>";
+    });
+    html += '<div class="qa"><div class="q">自己評価コメント' + (p.comment_heading ? '<span class="hint">　' + esc(p.comment_heading) + "</span>" : "") + "</div>" +
+      (D.editSelf ? '<textarea data-f="self_comment" style="margin-top:6px">' + esc(v.self_comment) + "</textarea>" : '<div class="a' + (v.self_comment ? "" : " empty") + '">' + (v.self_comment ? esc(v.self_comment) : "（記入なし）") + "</div>") + "</div></div>";
+
+    // 評価者
+    html += '<div class="card"><h3 class="sec">第１次評価者</h3><div class="frow"><label>氏名<input type="text" data-f="first_name" value="' + esc(v.first_name) + '" maxlength="40"></label>' +
+      '<label>記入日<input type="date" data-f="first_date" value="' + esc(v.first_date) + '"></label></div>' +
+      '<label class="lbl" for="fc">１次評価者コメント</label><textarea id="fc" data-f="first_comment" maxlength="3000">' + esc(v.first_comment) + "</textarea></div>" +
+      '<div class="card"><h3 class="sec">管理者</h3><div class="frow"><label>氏名<input type="text" data-f="manager_name" value="' + esc(v.manager_name) + '" maxlength="40"></label></div>' +
+      '<label class="lbl" for="mc">管理者コメント</label><textarea id="mc" data-f="manager_comment" maxlength="3000">' + esc(v.manager_comment) + "</textarea></div>";
+
+    html += '<div class="savebar"><span class="sp" id="dirtyMsg">' + (D.dirty ? '<span class="dirty-dot"></span>未保存の変更があります' : '<span class="hint">変更はありません</span>') + "</span>" +
+      '<span class="hint">第1次 <b class="num" id="fCnt">' + tf.n + "</b>/" + p.items.length + "</span>" +
+      '<button class="btn primary" id="saveBtn">保存する</button></div>';
+    $("tab-detail").innerHTML = html;
+  }
+
+  function markDirty() {
+    S.detail.dirty = true;
+    $("dirtyMsg").innerHTML = '<span class="dirty-dot"></span>未保存の変更があります';
+  }
+  function updateDetailTotals() {
+    var p = periodById(S.periodId), v = S.detail.v, max = p.items.length * 5;
+    var ts = K.total(v.self_scores, p.items), tf = K.total(v.first_scores, p.items);
+    $("tSelf").innerHTML = (ts.n ? ts.sum : "–") + "<small>/ " + max + "</small>";
+    $("tFirst").innerHTML = (tf.n ? tf.sum : "–") + "<small>/ " + max + "</small>";
+    $("tDiff").innerHTML = ts.n && tf.n ? diffHtml(ts.sum, tf.sum) : "–";
+    $("fCnt").textContent = tf.n;
+    p.items.forEach(function (it) {
+      var sv = v.self_scores[it.no], fv = v.first_scores[it.no], d = sv && fv ? fv - sv : 0, el = $("dm" + it.no);
+      if (el) el.innerHTML = d ? (d > 0 ? '<span class="diff-pos">+' + d + "</span>" : '<span class="diff-neg">' + d + "</span>") : "";
+    });
+  }
+
+  $("tab-detail").addEventListener("click", function (e) {
+    var D = S.detail; if (!D) return;
+    var b = e.target.closest("button"); if (!b) return;
+    var p = periodById(S.periodId), s = staffById(D.staffId);
+    if (b.hasAttribute("data-score")) {
+      var kind = b.getAttribute("data-score"), no = b.getAttribute("data-no"), val = Number(b.getAttribute("data-v"));
+      var bag = kind === "self" ? D.v.self_scores : D.v.first_scores;
+      if (Number(bag[no]) === val) delete bag[no]; else bag[no] = val;
+      Array.prototype.forEach.call(b.parentNode.children, function (x) { var on = Number(x.getAttribute("data-v")) === Number(bag[no]); x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); });
+      if (kind === "first" && !D.v.first_date) { D.v.first_date = K.todayISO(); var fd = document.querySelector('[data-f="first_date"]'); if (fd) fd.value = D.v.first_date; }
+      markDirty(); updateDetailTotals(); return;
+    }
+    if (b.id === "backBtn") { if (!confirmLeaveDetail()) return; S.tab = "list"; S.detail = null; render(); return; }
+    if (b.id === "printOne") { K.printSheets([{ period: p, staffName: s.name, ev: Object.assign({}, evalOf(p.id, s.id) || {}, D.v) }]); return; }
+    if (b.id === "copySelf") {
+      var c = 0;
+      p.items.forEach(function (it) { if (!D.v.first_scores[it.no] && D.v.self_scores[it.no]) { D.v.first_scores[it.no] = D.v.self_scores[it.no]; c++; } });
+      if (!c) { toast("コピーする項目はありません"); return; }
+      if (!D.v.first_date) D.v.first_date = K.todayISO();
+      D.dirty = true; renderDetail(); toast(c + " 項目をコピーしました（必要に応じて修正してください）"); return;
+    }
+    if (b.id === "saveBtn") { saveDetail(); return; }
+    if (b.id === "returnBtn") {
+      ask("本人に差し戻しますか？", "<p>" + esc(s.name) + " さんが、自分のURLから再び修正・提出できるようになります（第1次評価やコメントは残ります）。</p>", "差し戻す").then(function (ok) {
+        if (!ok) return;
+        (D.dirty ? saveDetail(true) : Promise.resolve()).then(function () {
+          return action("eval_status", { period_id: p.id, staff_id: s.id, status: "draft" });
+        }).then(function () { return refresh(); }).then(function () { toast("差し戻しました"); }, function (err) { toast(err.message); });
+      });
+      return;
+    }
+    if (b.id === "markSubBtn") {
+      ask("提出済みにしますか？", "<p>紙で提出された分を入力した場合などに使います。提出済みにすると本人は修正できなくなります。</p>", "提出済みにする").then(function (ok) {
+        if (!ok) return;
+        saveDetail(true, "submitted").then(function () { toast("提出済みにしました"); });
+      });
+    }
+  });
+  $("tab-detail").addEventListener("input", function (e) {
+    var D = S.detail; if (!D) return;
+    var f = e.target.getAttribute("data-f"), a = e.target.getAttribute("data-ans");
+    if (f) { D.v[f] = e.target.value; markDirty(); }
+    if (a) { if (e.target.value.trim()) D.v.answers[a] = e.target.value; else delete D.v.answers[a]; markDirty(); }
+    if (f === "years") { /* tile is refreshed on save */ }
+  });
+  $("tab-detail").addEventListener("change", function (e) {
+    if (e.target.id === "editSelf") { S.detail.editSelf = e.target.checked; renderDetail(); }
+  });
+
+  function saveDetail(silent, status) {
+    var D = S.detail, p = periodById(S.periodId);
+    var args = {
+      period_id: p.id, staff_id: D.staffId,
+      first_scores: D.v.first_scores, first_name: D.v.first_name, first_date: D.v.first_date, first_comment: D.v.first_comment,
+      manager_name: D.v.manager_name, manager_comment: D.v.manager_comment
+    };
+    if (D.editSelf || !evalOf(p.id, D.staffId)) {
+      args.self = { years: D.v.years, self_date: D.v.self_date, self_scores: D.v.self_scores, answers: D.v.answers, self_comment: D.v.self_comment };
+    }
+    if (status) args.status = status;
+    var nm = names(); if (D.v.first_name) nm.first = D.v.first_name; if (D.v.manager_name) nm.manager = D.v.manager_name; K.store(NAMES_KEY, JSON.stringify(nm));
+    var btn = $("saveBtn"); if (btn) btn.disabled = true;
+    return action("eval_save", args).then(function (res) {
+      if (!res.ok) throw new Error("保存できませんでした（" + res.error + "）");
+      D.dirty = false;
+      return refresh();
+    }).then(function () {
+      if (!silent) toast("保存しました");
+    }, function (err) { if (btn) btn.disabled = false; toast(err.message); throw err; });
+  }
+
+  /* ========== 推移・比較 ========== */
+  function legendHtml() {
+    return '<div class="legend"><span><i style="background:var(--self)"></i>本人計</span><span><i style="background:var(--first)"></i>第1次計</span></div>';
+  }
+  function chartSvg(periods, staffId) {
+    var W = 640, H = 220, L = 44, R = 40, T = 20, B = 34;
+    var pts = periods.map(function (p) {
+      var ev = evalOf(p.id, staffId) || {}, ts = K.total(ev.self_scores, p.items), tf = K.total(ev.first_scores, p.items);
+      return { p: p, s: ts.n ? ts.sum : null, f: tf.n ? tf.sum : null };
+    });
+    var vals = []; pts.forEach(function (o) { if (o.s != null) vals.push(o.s); if (o.f != null) vals.push(o.f); });
+    if (!vals.length) return '<p class="hint">データがありません</p>';
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    lo = Math.max(0, Math.floor((lo - 6) / 10) * 10); hi = Math.ceil((hi + 6) / 10) * 10; if (hi - lo < 20) hi = lo + 20;
+    var x = function (i) { return pts.length === 1 ? (L + W - R) / 2 : L + i * (W - L - R) / (pts.length - 1); };
+    var y = function (v) { return T + (hi - v) * (H - T - B) / (hi - lo); };
+    var g = "";
+    for (var t = lo; t <= hi; t += (hi - lo > 60 ? 20 : 10)) g += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(t) + '" y2="' + y(t) + '"/><text x="' + (L - 6) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + t + "</text>";
+    pts.forEach(function (o, i) { g += '<text x="' + x(i) + '" y="' + (H - 10) + '" text-anchor="middle">' + esc(shortTitle(o.p)) + "</text>"; });
+    function line(key, cls) {
+      var d = "", out = "";
+      pts.forEach(function (o, i) { if (o[key] == null) return; d += (d ? "L" : "M") + x(i).toFixed(1) + " " + y(o[key]).toFixed(1); });
+      if (d) out += '<path class="l' + cls + '" d="' + d + '"/>';
+      pts.forEach(function (o, i) {
+        if (o[key] == null) return;
+        out += '<circle class="p' + cls + '" cx="' + x(i) + '" cy="' + y(o[key]) + '" r="4"><title>' + esc(o.p.title) + " " + (cls === "self" ? "本人" : "第1次") + " " + o[key] + "</title></circle>";
+        out += '<text class="v' + cls + '" x="' + x(i) + '" y="' + (y(o[key]) + (cls === "self" ? -9 : 17)) + '" text-anchor="middle">' + o[key] + "</text>";
+      });
+      return out;
+    }
+    return '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="合計点の推移">' + g + line("s", "self") + line("f", "first") + "</svg>";
+  }
+  function shortTitle(p) { return "R" + p.year + (p.half === 1 ? "前期" : "後期"); }
+
+  function renderTrend() {
+    var ps = chrono(), staff = (S.data.staff || []).filter(function (s) { return s.active || ps.some(function (p) { return evalOf(p.id, s.id); }); });
+    if (!S.trendStaff || !staffById(S.trendStaff)) S.trendStaff = staff[0] && staff[0].id;
+    var html = '<div class="card"><div class="toolbar"><h3 class="sec sp" style="margin:0">職員ごとの合計点の推移</h3><select id="trendStaff">' +
+      staff.map(function (s) { return '<option value="' + s.id + '"' + (s.id === S.trendStaff ? " selected" : "") + ">" + esc(s.name) + "</option>"; }).join("") + "</select></div>" +
+      legendHtml() + (S.trendStaff ? chartSvg(ps.filter(function (p) { return evalOf(p.id, S.trendStaff); }), S.trendStaff) : "") + "</div>";
+
+    html += '<div class="card"><h3 class="sec">全員の一覧（本人計 / 第1次計）</h3><p class="hint" style="margin-top:0">数字をクリックすると、その期の考課表を開きます。</p><div class="tablebox"><table class="list matrix"><thead><tr><th>氏名</th>' +
+      ps.map(function (p) { return '<th class="c">' + esc(shortTitle(p)) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      staff.map(function (s) {
+        return "<tr><td><b>" + esc(s.name) + "</b></td>" + ps.map(function (p) {
+          var ev = evalOf(p.id, s.id);
+          if (!ev) return '<td class="c muted">–</td>';
+          var ts = K.total(ev.self_scores, p.items), tf = K.total(ev.first_scores, p.items);
+          return '<td class="cell num" data-p="' + p.id + '" data-s="' + s.id + '"><span class="selfc">' + (ts.n ? ts.sum : "–") + '</span> / <span class="firstc">' + (tf.n ? tf.sum : "–") + "</span></td>";
+        }).join("") + "</tr>";
+      }).join("") + "</tbody></table></div></div>";
+
+    // 評価要素ごとの平均（選択中の期）
+    var p = periodById(S.periodId);
+    if (p) {
+      var evs = (S.data.evaluations || []).filter(function (e) { return e.period_id === p.id && staffById(e.staff_id); });
+      var groups = K.groupItems(p.items).map(function (g) {
+        var ss = [], ff = [];
+        evs.forEach(function (e) { g.items.forEach(function (it) { var a = (e.self_scores || {})[it.no], b = (e.first_scores || {})[it.no]; if (a) ss.push(a); if (b) ff.push(b); }); });
+        var avg = function (a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; };
+        return { cat: g.cat, s: avg(ss), f: avg(ff) };
+      });
+      html += '<div class="card"><h3 class="sec">評価要素ごとの平均点（' + esc(p.title) + "・5点満点）</h3>" + legendHtml() + '<div class="catbars">' +
+        groups.map(function (g) {
+          return '<div class="catbar"><div>' + esc(g.cat.replace(/（.*）$/, "")) + '</div><div class="bars">' +
+            '<div class="b s"><i style="width:' + ((g.s || 0) / 5 * 100) + '%"></i></div><div class="b f"><i style="width:' + ((g.f || 0) / 5 * 100) + '%"></i></div>' +
+            '<div class="vals num">本人 ' + fmtNum(g.s, 2) + "　第1次 " + fmtNum(g.f, 2) + "</div></div></div>";
+        }).join("") + "</div></div>";
+    }
+    $("tab-trend").innerHTML = html;
+  }
+  $("tab-trend").addEventListener("change", function (e) { if (e.target.id === "trendStaff") { S.trendStaff = e.target.value; renderTrend(); } });
+  $("tab-trend").addEventListener("click", function (e) {
+    var c = e.target.closest("[data-p]"); if (!c) return;
+    S.periodId = c.getAttribute("data-p"); renderPeriodSel(); openDetail(c.getAttribute("data-s"));
+  });
+
+  /* ========== 職員とURL ========== */
+  function renderStaff() {
+    var st = S.data.staff || [];
+    var html = '<div class="card"><h3 class="sec">職員を追加</h3><form class="addrow" id="addStaff"><label>氏名<input type="text" id="nsName" maxlength="40" required></label>' +
+      '<label>入社日（任意）<input type="date" id="nsHire"></label><button class="btn primary" type="submit">追加</button></form>' +
+      (S.data.board_staff_available ? '<p class="hint" style="margin:12px 0 0">「スタッフ個別評価ボード」に登録されている職員が <b>' + S.data.board_staff_available + ' 人</b> います。<button class="linkbtn" id="importBoard">まとめて取り込む</button></p>' : "") + "</div>";
+    html += '<div class="card"><h3 class="sec">職員一覧と個人用URL</h3><p class="hint" style="margin-top:0">個人用URLを本人にLINE等で送ってください。URLを知っている人はその職員として入力できるため、本人以外には送らないでください。漏れた場合は「URL再発行」で古いURLを無効にできます。</p>' +
+      '<div class="tablebox"><table class="list"><thead><tr><th>氏名</th><th>入社日</th><th class="c">在籍</th><th>個人用URL</th><th></th></tr></thead><tbody>' +
+      (st.map(function (s) {
+        return '<tr data-sid="' + s.id + '"><td><input type="text" class="sName" value="' + esc(s.name) + '" maxlength="40" style="width:10em"></td>' +
+          '<td><input type="date" class="sHire" value="' + esc(s.hire_date || "") + '"></td>' +
+          '<td class="c"><input type="checkbox" class="sActive"' + (s.active ? " checked" : "") + ' aria-label="在籍"></td>' +
+          '<td><div class="urlcell"><button class="btn small" data-act="copy">コピー</button><a class="btn small" target="_blank" rel="noopener" href="https://line.me/R/msg/text/?' + encodeURIComponent(s.name + "さん\n人事考課表の入力をお願いします。\n" + staffUrl(s)) + '">LINEで送る</a><button class="btn small" data-act="open">開く</button><button class="linkbtn" data-act="regen">URL再発行</button></div></td>' +
+          '<td><div class="urlcell"><button class="btn small primary" data-act="save">保存</button><button class="linkbtn" data-act="remove" style="color:var(--bad)">外す</button></div></td></tr>';
+      }).join("") || '<tr><td colspan="5" class="muted">まだ登録されていません。</td></tr>') + "</tbody></table></div>" +
+      '<p class="hint">「在籍」のチェックを外すと、その職員のURLは使えなくなり、一覧にも表示されません（過去のデータは残ります）。</p></div>';
+    $("tab-staff").innerHTML = html;
+  }
+  $("tab-staff").addEventListener("submit", function (e) {
+    if (e.target.id !== "addStaff") return;
+    e.preventDefault();
+    action("staff_save", { name: $("nsName").value, hire_date: $("nsHire").value }).then(function (res) {
+      if (!res.ok) throw new Error("追加できませんでした");
+      return refresh();
+    }).then(function () { toast("追加しました"); var n = $("nsName"); if (n) n.focus(); }, function (err) { toast(err.message); });
+  });
+  $("tab-staff").addEventListener("click", function (e) {
+    if (e.target.id === "importBoard") {
+      action("staff_import_board").then(function (res) { return refresh().then(function () { toast((res.added || 0) + " 人を取り込みました"); }); }, function (err) { toast(err.message); });
+      return;
+    }
+    var b = e.target.closest("[data-act]"); if (!b) return;
+    var tr = b.closest("tr"), s = staffById(tr.getAttribute("data-sid")), act = b.getAttribute("data-act");
+    if (act === "copy") {
+      var url = staffUrl(s);
+      (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast(s.name + " さんのURLをコピーしました"); }, function () { window.prompt("URLをコピーしてください", url); });
+    } else if (act === "open") {
+      window.open(staffUrl(s), "_blank", "noopener");
+    } else if (act === "save") {
+      action("staff_save", { id: s.id, name: tr.querySelector(".sName").value, hire_date: tr.querySelector(".sHire").value, active: tr.querySelector(".sActive").checked })
+        .then(function (res) { if (!res.ok) throw new Error("保存できませんでした"); return refresh(); }).then(function () { toast("保存しました"); }, function (err) { toast(err.message); });
+    } else if (act === "regen") {
+      ask("URLを再発行しますか？", "<p>" + esc(s.name) + " さんの今のURLは使えなくなります。新しいURLを本人に送り直してください。</p>", "再発行する").then(function (ok) {
+        if (!ok) return;
+        action("staff_regen_key", { id: s.id }).then(refresh).then(function () { toast("再発行しました"); }, function (err) { toast(err.message); });
+      });
+    } else if (act === "remove") {
+      ask("一覧から外しますか？", "<p>" + esc(s.name) + " さんを職員一覧・集計から外します。URLも使えなくなります。<br>（入力済みのデータは消去されずに保管されます）</p>", "外す", true).then(function (ok) {
+        if (!ok) return;
+        action("staff_remove", { id: s.id }).then(refresh).then(function () { toast("外しました"); }, function (err) { toast(err.message); });
+      });
+    }
+  });
+
+  /* ========== 期・評価項目 ========== */
+  function renderPeriods() {
+    var ps = S.data.periods || [];
+    var latest = chrono().slice(-1)[0];
+    var ny = latest ? (latest.half === 2 ? latest.year + 1 : latest.year) : 8, nh = latest ? (latest.half === 2 ? 1 : 2) : 2;
+    var html = '<div class="card"><h3 class="sec">新しい評価期間を作る</h3><form class="addrow" id="newPeriod"><label>年<span style="display:flex;align-items:center;gap:6px">令和<input type="number" id="npYear" min="1" max="99" value="' + ny + '" style="width:5em">年</span></label>' +
+      '<label>期<select id="npHalf"><option value="1"' + (nh === 1 ? " selected" : "") + '>前期（12月～5月）</option><option value="2"' + (nh === 2 ? " selected" : "") + '>後期（6月～11月）</option></select></label>' +
+      '<button class="btn primary" type="submit">作成</button></form><p class="hint" style="margin:8px 0 0">評価項目と質問は、直近の期からコピーされます。作成後に「受付中」にすると職員が入力できるようになります。</p></div>';
+    html += '<div class="card"><h3 class="sec">評価期間の一覧</h3><div class="tablebox"><table class="list"><thead><tr><th>期間</th><th class="c">受付</th><th class="r">入力あり</th><th></th></tr></thead><tbody>' +
+      ps.map(function (p) {
+        var n = (S.data.evaluations || []).filter(function (e) { return e.period_id === p.id; }).length;
+        return '<tr data-pid="' + p.id + '"><td><b>' + esc(p.title) + "</b></td>" +
+          '<td class="c"><label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" class="pOpen"' + (p.is_open ? " checked" : "") + "> " + (p.is_open ? "受付中" : "終了") + "</label></td>" +
+          '<td class="r num">' + n + " 人</td>" +
+          '<td><div class="urlcell"><button class="btn small" data-pact="edit">項目を編集</button>' + (n ? "" : '<button class="linkbtn" data-pact="remove" style="color:var(--bad)">削除</button>') + "</div></td></tr>";
+      }).join("") + "</tbody></table></div></div>";
+    html += '<div id="periodEditor"></div>';
+    $("tab-periods").innerHTML = html;
+    if (S.editPeriod && periodById(S.editPeriod.id)) renderEditor();
+  }
+
+  function renderEditor() {
+    var E = S.editPeriod, p = periodById(E.id);
+    var locked = (S.data.evaluations || []).some(function (e) { return e.period_id === p.id; });
+    var qOpts = function (cur) {
+      return '<option value="">質問なし</option>' + E.questions.map(function (q, i) { return '<option value="' + (i + 1) + '"' + (Number(cur) === i + 1 ? " selected" : "") + ">" + K.qLabel(i + 1) + "</option>"; }).join("");
+    };
+    var html = '<div class="card"><div class="toolbar"><h3 class="sec sp" style="margin:0">「' + esc(p.title) + '」の編集</h3><button class="btn small" data-ed="close">閉じる</button></div>' +
+      (locked ? '<div class="banner warn">この期はすでに入力が始まっているため、<b>文言の修正のみ</b>できます（項目・質問の追加・削除・並べ替えはできません）。</div>' : "") +
+      '<div class="frow"><label style="flex:1 1 18em">期間の名前（考課表の見出し）<input type="text" id="edTitle" value="' + esc(E.title) + '" maxlength="80"></label></div>' +
+      '<div class="frow"><label style="flex:1 1 18em">自己評価コメント欄の見出し（任意）<input type="text" id="edHeading" value="' + esc(E.comment_heading) + '" maxlength="200" placeholder="例）【2026年度　私のビジョン・方針進捗表に基づいて】"></label></div>' +
+      '<h3 class="sec" style="margin-top:16px">評価項目（' + E.items.length + '項目）</h3><div class="itemed">' +
+      E.items.map(function (it, i) {
+        return '<div class="ie" data-i="' + i + '"><div class="n">' + (i + 1) + '</div><div class="f">' +
+          '<div class="two"><input type="text" data-k="cat" value="' + esc(it.cat || "") + '" placeholder="評価要素（例：Ａ．理念の理解）" maxlength="60"><select data-k="q">' + qOpts(it.q) + "</select></div>" +
+          '<div><span class="lbl">評価の着眼点</span><textarea data-k="text" maxlength="300">' + esc(it.text) + "</textarea></div>" +
+          '<div><span class="lbl">補足（かっこ書きなど・任意）</span><textarea data-k="sub" maxlength="300">' + esc(it.sub || "") + "</textarea></div></div>" +
+          '<div class="ops">' + (locked ? "" : '<button class="btn small" data-ed="up" aria-label="上へ">↑</button><button class="btn small" data-ed="down" aria-label="下へ">↓</button><button class="btn small danger" data-ed="del" aria-label="削除">削除</button>') + "</div></div>";
+      }).join("") + "</div>" +
+      (locked ? "" : '<p><button class="btn small" data-ed="addItem">＋ 評価項目を追加</button></p>') +
+      '<h3 class="sec" style="margin-top:18px">質問（' + E.questions.length + "個）</h3><div class=\"itemed\">" +
+      E.questions.map(function (q, i) {
+        return '<div class="ie" data-qi="' + i + '"><div class="n">' + K.CIRCLED[i + 1] + '</div><div class="f"><textarea data-qk="text" maxlength="300">' + esc(q.text) + "</textarea></div>" +
+          '<div class="ops">' + (locked ? "" : '<button class="btn small danger" data-ed="qdel">削除</button>') + "</div></div>";
+      }).join("") + "</div>" +
+      (locked ? "" : '<p><button class="btn small" data-ed="addQ">＋ 質問を追加</button></p>') +
+      '<div class="savebar"><span class="sp hint">保存すると、職員の入力画面と印刷に反映されます。</span><button class="btn primary" data-ed="save">この内容で保存</button></div></div>';
+    $("periodEditor").innerHTML = html;
+  }
+
+  function editorRead() {
+    var E = S.editPeriod; if (!E || !$("edTitle")) return;
+    E.title = $("edTitle").value; E.comment_heading = $("edHeading").value;
+    Array.prototype.forEach.call(document.querySelectorAll("#periodEditor [data-i]"), function (row) {
+      var it = E.items[Number(row.getAttribute("data-i"))];
+      it.cat = row.querySelector('[data-k="cat"]').value;
+      it.text = row.querySelector('[data-k="text"]').value;
+      it.sub = row.querySelector('[data-k="sub"]').value;
+      it.q = row.querySelector('[data-k="q"]').value ? Number(row.querySelector('[data-k="q"]').value) : null;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("#periodEditor [data-qi]"), function (row) {
+      E.questions[Number(row.getAttribute("data-qi"))].text = row.querySelector('[data-qk="text"]').value;
+    });
+  }
+
+  $("tab-periods").addEventListener("submit", function (e) {
+    if (e.target.id !== "newPeriod") return;
+    e.preventDefault();
+    action("period_create", { year: Number($("npYear").value), half: Number($("npHalf").value) }).then(function (res) {
+      if (res.error === "exists") throw new Error("その期はすでにあります");
+      if (!res.ok) throw new Error("作成できませんでした");
+      S.periodId = res.id;
+      return refresh();
+    }).then(function () { toast("作成しました。準備ができたら「受付」にチェックを入れてください"); }, function (err) { toast(err.message); });
+  });
+  $("tab-periods").addEventListener("change", function (e) {
+    if (!e.target.classList.contains("pOpen")) return;
+    var pid = e.target.closest("tr").getAttribute("data-pid");
+    action("period_update", { id: pid, is_open: e.target.checked }).then(refresh).then(function () {
+      toast(e.target.checked ? "受付を開始しました" : "受付を終了しました");
+    }, function (err) { toast(err.message); });
+  });
+  $("tab-periods").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-pact],[data-ed]"); if (!b) return;
+    var pact = b.getAttribute("data-pact"), ed = b.getAttribute("data-ed");
+    if (pact) {
+      var p = periodById(b.closest("tr").getAttribute("data-pid"));
+      if (pact === "edit") {
+        S.editPeriod = { id: p.id, title: p.title, comment_heading: p.comment_heading || "", items: JSON.parse(JSON.stringify(p.items)), questions: JSON.parse(JSON.stringify(p.questions || [])) };
+        renderEditor(); $("periodEditor").scrollIntoView({ behavior: "smooth" });
+      } else if (pact === "remove") {
+        ask("この期を削除しますか？", "<p>" + esc(p.title) + "</p>", "削除する", true).then(function (ok) {
+          if (!ok) return;
+          action("period_remove", { id: p.id }).then(function (res) { if (res.error) throw new Error("入力済みのデータがある期は削除できません"); S.periodId = null; return refresh(); })
+            .then(function () { toast("削除しました"); }, function (err) { toast(err.message); });
+        });
+      }
+      return;
+    }
+    var E = S.editPeriod; if (!E) return;
+    editorRead();
+    var row = b.closest("[data-i]"), i = row ? Number(row.getAttribute("data-i")) : -1;
+    if (ed === "close") { S.editPeriod = null; $("periodEditor").innerHTML = ""; return; }
+    if (ed === "up" && i > 0) { var t = E.items[i - 1]; E.items[i - 1] = E.items[i]; E.items[i] = t; }
+    if (ed === "down" && i < E.items.length - 1) { var t2 = E.items[i + 1]; E.items[i + 1] = E.items[i]; E.items[i] = t2; }
+    if (ed === "del") E.items.splice(i, 1);
+    if (ed === "addItem") E.items.push({ cat: (E.items[E.items.length - 1] || {}).cat || "", text: "", sub: "", q: null });
+    if (ed === "addQ") E.questions.push({ text: "" });
+    if (ed === "qdel") {
+      var qi = Number(b.closest("[data-qi]").getAttribute("data-qi"));
+      E.questions.splice(qi, 1);
+      E.items.forEach(function (it) { if (it.q === qi + 1) it.q = null; else if (it.q > qi + 1) it.q--; });
+    }
+    if (ed === "save") {
+      var items = E.items.map(function (it, k) { return { no: k + 1, cat: (it.cat || "").trim(), text: (it.text || "").trim(), sub: (it.sub || "").trim(), q: it.q || null }; });
+      var qs = E.questions.map(function (q, k) { return { no: k + 1, text: (q.text || "").trim() }; });
+      if (items.some(function (it) { return !it.text; })) { toast("「評価の着眼点」が空の項目があります"); return; }
+      if (qs.some(function (q) { return !q.text; })) { toast("空の質問があります"); return; }
+      action("period_update", { id: E.id, title: E.title, comment_heading: E.comment_heading, items: items, questions: qs }).then(function (res) {
+        if (res.error === "has_evaluations") throw new Error("入力が始まっている期は、項目の数を変えられません");
+        if (!res.ok) throw new Error("保存できませんでした（入力内容を確認してください）");
+        S.editPeriod = null; return refresh();
+      }).then(function () { toast("保存しました"); }, function (err) { toast(err.message); });
+      return;
+    }
+    renderEditor();
+  });
+
+  /* ---------- 起動 ---------- */
+  S.token = readToken();
+  if (S.token) start(); else showLogin();
+})();
+</script>
+</body>
+</html>

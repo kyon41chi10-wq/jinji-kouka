@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>京町亭 人事考課表</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2324507A'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif'%3E京%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<link rel="stylesheet" href="kouka.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <div class="facility">京町亭</div>
+      <h1>人事考課表</h1>
+    </div>
+    <div class="round" id="periodLabel"></div>
+  </header>
+
+  <div id="status" class="notice">読み込み中…</div>
+
+  <main id="app" hidden>
+    <section class="card intro">
+      <p><b id="staffName"></b> さん</p>
+      <p>この半年のご自身を振り返り、各項目を <b>5〜1</b> の5段階で選んでください。質問①〜⑥は、思い当たるエピソードがあれば記入してください。</p>
+      <p class="hint">入力内容は自動で保存されます。途中で閉じても、同じURLを開けば続きから入力できます。</p>
+      <ul class="scale-key" id="scaleKey"></ul>
+    </section>
+
+    <div id="periodPick" class="card" hidden>
+      <label class="hint" for="periodSel">評価期間</label>
+      <select id="periodSel" style="width:100%;margin-top:4px"></select>
+    </div>
+
+    <div id="submittedBanner" class="banner good" hidden></div>
+
+    <section class="card basics" style="margin-top:14px">
+      <label>記入日<input type="date" id="selfDate"></label>
+      <label>勤続年数<span class="yrs"><input type="text" id="years" inputmode="decimal" maxlength="20" placeholder="例）5"><span>年</span></span></label>
+    </section>
+
+    <div id="items"></div>
+
+    <section class="card" style="margin-top:30px">
+      <h2><label for="selfComment">自己評価コメント</label></h2>
+      <p class="hint" id="commentHeading" hidden></p>
+      <textarea id="selfComment" maxlength="3000" placeholder="この半年を振り返って、自由に記入してください"></textarea>
+    </section>
+
+    <div class="submit-area" id="submitArea">
+      <button type="button" class="btn primary big" id="submitBtn">提出する</button>
+      <p class="hint">提出すると、自分では修正できなくなります。<br>まだ途中の場合は、そのまま閉じても大丈夫です（自動保存）。</p>
+    </div>
+  </main>
+</div>
+
+<div class="dock" id="dock" hidden>
+  <div class="dock-in">
+    <div class="prog">
+      <div class="stat"><span>回答 <b class="num" id="cnt">0</b> / <span class="num" id="cntMax">0</span></span><span>本人計 <b class="num" id="sum">0</b> 点</span></div>
+      <div class="bar"><i id="barFill"></i></div>
+    </div>
+    <div class="saved" id="savedAt"></div>
+  </div>
+</div>
+
+<dialog id="confirmDlg">
+  <form method="dialog" class="dlg">
+    <h3>提出しますか？</h3>
+    <p id="confirmText"></p>
+    <p class="hint">提出後は自分で修正できません。修正が必要になったら管理者に連絡してください。</p>
+    <div class="acts">
+      <button class="btn" value="cancel">もう一度見直す</button>
+      <button class="btn primary" value="ok" id="confirmOk">提出する</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="kouka.js"></script>
+<script>
+(function () {
+  "use strict";
+  var K = KOUKA, $ = K.$, esc = K.esc;
+  var params = new URLSearchParams(location.search);
+  var KEY = (params.get("k") || "").trim();
+
+  var state = { data: null, period: null, readOnly: false, dirty: false, saving: false, timer: null };
+
+  function showStatus(msg, bad) {
+    $("status").hidden = false;
+    $("status").className = "notice" + (bad ? " bad" : "");
+    $("status").innerHTML = msg;
+  }
+  function toast(msg) {
+    Array.prototype.forEach.call(document.querySelectorAll(".toast"), function (x) { x.remove(); });
+    var t = document.createElement("div");
+    t.className = "toast"; t.textContent = msg; t.setAttribute("role", "status");
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2600);
+  }
+  function draftKey() { return "kouka-draft-" + KEY + "-" + (state.period && state.period.id); }
+
+  if (!/^[0-9a-f]{16,64}$/.test(KEY)) {
+    showStatus("このページは、管理者から送られた<b>あなた専用のURL</b>から開いてください。", true);
+    return;
+  }
+
+  $("scaleKey").innerHTML = K.SCALE.map(function (s) { return "<li><b>" + s.v + "</b><span>" + esc(s.long) + "</span></li>"; }).join("");
+
+  function loadAll() {
+    showStatus("読み込み中…");
+    K.rpc("kouka_staff_load", { p_key: KEY }).then(function (res) {
+      if (res.error === "not_found") {
+        showStatus("このURLは使えなくなっています。<br>管理者に新しいURLを確認してください。", true);
+        return;
+      }
+      state.data = res;
+      if (!res.periods || !res.periods.length) {
+        showStatus("<b>" + esc(res.staff.name) + "</b> さん<br>現在、受付中の人事考課はありません。", false);
+        return;
+      }
+      $("status").hidden = true;
+      $("app").hidden = false;
+      $("staffName").textContent = res.staff.name;
+      if (res.periods.length > 1) {
+        $("periodPick").hidden = false;
+        $("periodSel").innerHTML = res.periods.map(function (p, i) { return '<option value="' + i + '">' + esc(p.title) + "</option>"; }).join("");
+        $("periodSel").onchange = function () { flushSave().then(function () { openPeriod(res.periods[Number($("periodSel").value)]); }); };
+      }
+      openPeriod(res.periods[0]);
+    }).catch(function (e) {
+      showStatus(esc(e.message) + '<br><br><button class="btn" onclick="location.reload()">再読み込み</button>', true);
+    });
+  }
+
+  function currentFromServer(p) {
+    var ev = p.eval || {};
+    return {
+      years: ev.years || state.data.last_years || "",
+      self_date: ev.self_date || K.todayISO(),
+      self_scores: ev.self_scores || {},
+      answers: ev.answers || {},
+      self_comment: ev.self_comment || ""
+    };
+  }
+
+  function openPeriod(p) {
+    state.period = p;
+    var ev = p.eval || {};
+    state.readOnly = ev.status === "submitted";
+    var d = currentFromServer(p);
+    // 端末に残っている、サーバーより新しい下書きがあればそちらを使う
+    if (!state.readOnly) {
+      try {
+        var local = JSON.parse(K.load(draftKey()) || "null");
+        if (local && local.data && (!ev.updated_at || new Date(local.at) > new Date(ev.updated_at))) {
+          d = local.data; state.dirty = true;
+        }
+      } catch (_) {}
+    }
+    $("periodLabel").innerHTML = "<b>" + esc(p.title) + "</b>";
+    document.title = p.title + "　京町亭 人事考課表";
+    renderItems(p, d);
+    $("selfDate").value = d.self_date || "";
+    $("years").value = d.years || "";
+    $("selfComment").value = d.self_comment || "";
+    $("commentHeading").hidden = !p.comment_heading;
+    $("commentHeading").textContent = p.comment_heading || "";
+
+    var disabled = state.readOnly;
+    ["selfDate", "years", "selfComment"].forEach(function (id) { $(id).disabled = disabled; });
+    $("submitArea").hidden = disabled;
+    $("submittedBanner").hidden = !disabled;
+    if (disabled) {
+      $("submittedBanner").innerHTML = "<b>提出済みです</b>（" + esc(K.fmtDateTime(ev.submitted_at)) + "）。ありがとうございました。<br>修正が必要な場合は管理者に連絡してください。";
+    }
+    $("dock").hidden = false;
+    updateProgress();
+    if (state.dirty && !disabled) scheduleSave(800);
+    else setSaved(ev.updated_at ? "保存済み " + K.fmtDateTime(ev.updated_at) : "");
+  }
+
+  function renderItems(p, d) {
+    var html = "";
+    K.groupItems(p.items).forEach(function (g) {
+      html += '<h2 class="cat">' + K.nl2br(g.cat) + "</h2><ol class=\"items\">";
+      g.items.forEach(function (it) {
+        var cur = Number(d.self_scores[String(it.no)]) || 0;
+        var opts = K.SCALE.map(function (s) {
+          var id = "s" + it.no + "_" + s.v;
+          return '<label class="opt" for="' + id + '"><input type="radio" name="s' + it.no + '" id="' + id + '" value="' + s.v + '"' +
+            (cur === s.v ? " checked" : "") + (state.readOnly ? " disabled" : "") + '><span><b>' + s.v + "</b><small>" + esc(s.short) + "</small></span></label>";
+        }).join("");
+        var q = "";
+        if (it.q) {
+          var qd = (p.questions || []).filter(function (x) { return Number(x.no) === Number(it.q); })[0];
+          if (qd) {
+            q = '<div class="qbox"><label for="a' + qd.no + '"><span class="tag">' + K.qLabel(qd.no) + "</span>" + esc(qd.text) + "</label>" +
+              '<textarea id="a' + qd.no + '" data-q="' + qd.no + '" maxlength="3000"' + (state.readOnly ? " disabled" : "") + ">" + esc(d.answers[String(qd.no)] || "") + "</textarea></div>";
+          }
+        }
+        html += '<li class="item' + (cur ? " done" : "") + '" id="it' + it.no + '"><fieldset><legend><span class="no">' + it.no + "</span><span>" + K.nl2br(it.text) +
+          (it.sub ? '<span class="sub">' + K.nl2br(it.sub) + "</span>" : "") + '</span></legend><div class="scale">' + opts + "</div>" + q + "</fieldset></li>";
+      });
+      html += "</ol>";
+    });
+    // どの項目にも紐づいていない質問は最後にまとめて表示
+    var linked = {};
+    p.items.forEach(function (it) { if (it.q) linked[it.q] = true; });
+    var loose = (p.questions || []).filter(function (x) { return !linked[x.no]; });
+    if (loose.length) {
+      html += '<h2 class="cat">質問</h2><div class="card">' + loose.map(function (qd) {
+        return '<div class="qbox" style="border:0;margin:0 0 12px;padding:0"><label for="a' + qd.no + '"><span class="tag">' + K.qLabel(qd.no) + "</span>" + esc(qd.text) + "</label>" +
+          '<textarea id="a' + qd.no + '" data-q="' + qd.no + '" maxlength="3000"' + (state.readOnly ? " disabled" : "") + ">" + esc(d.answers[String(qd.no)] || "") + "</textarea></div>";
+      }).join("") + "</div>";
+    }
+    $("items").innerHTML = html;
+  }
+
+  function collect() {
+    var p = state.period, scores = {}, answers = {};
+    p.items.forEach(function (it) {
+      var c = document.querySelector('input[name="s' + it.no + '"]:checked');
+      if (c) scores[String(it.no)] = Number(c.value);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("textarea[data-q]"), function (t) {
+      if (t.value.trim()) answers[t.getAttribute("data-q")] = t.value;
+    });
+    return { years: $("years").value.trim(), self_date: $("selfDate").value, self_scores: scores, answers: answers, self_comment: $("selfComment").value };
+  }
+
+  function updateProgress() {
+    var p = state.period; if (!p) return;
+    var d = collect(), t = K.total(d.self_scores, p.items);
+    $("cnt").textContent = t.n; $("cntMax").textContent = p.items.length; $("sum").textContent = t.sum;
+    $("barFill").style.width = (p.items.length ? t.n / p.items.length * 100 : 0) + "%";
+  }
+  function setSaved(t) { $("savedAt").textContent = t; }
+
+  function onChange(e) {
+    if (state.readOnly || !state.period) return;
+    if (e.target.matches('input[type="radio"]')) {
+      var li = e.target.closest(".item");
+      if (li) { li.classList.add("done"); li.classList.remove("missing"); }
+    }
+    updateProgress();
+    state.dirty = true;
+    K.store(draftKey(), JSON.stringify({ at: new Date().toISOString(), data: collect() }));
+    setSaved("未保存…");
+    scheduleSave(2500);
+  }
+  document.addEventListener("change", onChange);
+  document.addEventListener("input", function (e) { if (e.target.matches("textarea, input[type=text]")) onChange(e); });
+
+  function scheduleSave(ms) {
+    clearTimeout(state.timer);
+    state.timer = setTimeout(function () { flushSave(); }, ms);
+  }
+  function flushSave(submit) {
+    clearTimeout(state.timer);
+    if (state.readOnly || !state.period || (!state.dirty && !submit)) return Promise.resolve({ ok: true });
+    if (state.saving) return state.saving.then(function () { return flushSave(submit); });
+    var periodId = state.period.id, data = collect(), dk = draftKey();
+    state.dirty = false;
+    setSaved("保存中…");
+    state.saving = K.rpc("kouka_staff_save", { p_key: KEY, p_period: periodId, p_data: data, p_submit: !!submit })
+      .then(function (res) {
+        state.saving = false;
+        if (res.ok) {
+          K.store(dk, null);
+          setSaved("保存しました " + K.fmtDateTime(res.saved_at || new Date()));
+        } else {
+          if (res.error === "closed") toast("この期間の受付は終了しました。");
+          else if (res.error === "already_submitted") toast("すでに提出済みです。");
+          else if (res.error !== "incomplete") toast("保存できませんでした（" + res.error + "）");
+          if (res.error !== "incomplete") state.dirty = true;
+          setSaved(res.error === "incomplete" ? "保存しました" : "保存できませんでした");
+        }
+        return res;
+      }, function (e) {
+        state.saving = false; state.dirty = true;
+        setSaved("未送信（通信エラー）・端末には保存済み");
+        throw e;
+      });
+    return state.saving;
+  }
+  window.addEventListener("pagehide", function () { if (state.dirty) flushSave(); });
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden" && state.dirty) flushSave(); });
+
+  $("submitBtn").addEventListener("click", function () {
+    var p = state.period, d = collect();
+    var missing = p.items.filter(function (it) { return !d.self_scores[String(it.no)]; });
+    Array.prototype.forEach.call(document.querySelectorAll(".item.missing"), function (el) { el.classList.remove("missing"); });
+    if (missing.length) {
+      missing.forEach(function (it) { var el = $("it" + it.no); if (el) el.classList.add("missing"); });
+      var first = $("it" + missing[0].no);
+      if (first) first.scrollIntoView({ behavior: "smooth", block: "center" });
+      toast("未回答の項目が " + missing.length + " 個あります（赤枠）");
+      return;
+    }
+    var t = K.total(d.self_scores, p.items);
+    var blankQ = (p.questions || []).filter(function (q) { return !d.answers[String(q.no)]; }).length;
+    $("confirmText").innerHTML = "全 " + p.items.length + " 項目　本人計 <b>" + t.sum + " 点</b>" +
+      (blankQ ? "<br><span class=\"hint\">未記入の質問が " + blankQ + " 個あります（空欄のままでも提出できます）</span>" : "");
+    $("confirmDlg").returnValue = "";
+    $("confirmDlg").showModal();
+  });
+  $("confirmDlg").addEventListener("close", function () {
+    if ($("confirmDlg").returnValue !== "ok") return;
+    $("submitBtn").disabled = true;
+    state.dirty = true;
+    flushSave(true).then(function (res) {
+      $("submitBtn").disabled = false;
+      if (res && res.ok && res.submitted) {
+        state.period.eval = Object.assign({}, state.period.eval || {}, collect(), { status: "submitted", submitted_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+        openPeriod(state.period);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        toast("提出しました。ありがとうございました。");
+      } else if (res && res.error === "incomplete") {
+        toast("未回答の項目があります");
+      }
+    }, function (e) {
+      $("submitBtn").disabled = false;
+      toast(e.message);
+    });
+  });
+
+  loadAll();
+})();
+</script>
+</body>
+</html>
