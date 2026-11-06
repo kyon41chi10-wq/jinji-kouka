@@ -67,6 +67,36 @@ table.list tbody tr.click:hover{background:var(--ai-soft)}
 .mini button:hover{border-color:var(--ai)}
 .scorechip{display:inline-grid;place-items:center;min-width:34px;height:34px;border-radius:8px;font-weight:700;font-family:var(--display);background:var(--self-soft);color:var(--self)}
 .scorechip.empty{background:var(--grid);color:var(--muted)}
+:root{--draft:#6A55A8;--draft-soft:#EDE9F7}
+@media (prefers-color-scheme: dark){:root{--draft:#B3A3E6;--draft-soft:#2A2440}}
+.mini.draft button.on{background:var(--draft);border-color:var(--draft);color:#fff}
+.scorechip.draft{background:var(--draft-soft);color:var(--draft)}
+.tile.draft .v{color:var(--draft)}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface-2)}
+.seg button{appearance:none;border:0;background:none;padding:8px 14px;font-weight:700;color:var(--muted);cursor:pointer;min-height:40px}
+.seg button + button{border-left:1.5px solid var(--line)}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--ai);box-shadow:inset 0 -3px 0 var(--ai)}
+.modehint{font-size:13px;color:var(--ink-2);background:var(--surface-2);border-radius:10px;padding:8px 12px;margin:0 16px 8px}
+.etable tr.flagrow td{background:var(--warn-soft)}
+.flagmark{display:inline-block;margin-left:6px;font-size:12px;font-weight:700;color:var(--warn);white-space:nowrap}
+.etable tr.noterow td{background:var(--warn-soft);padding-top:0}
+.etable tr.noterow textarea{min-height:52px;font-size:14px;margin:0}
+.b-flag{background:var(--warn-soft);color:var(--warn)}
+@media (max-width:760px){.etable tr.noterow{display:block;padding:0 8px 8px}.etable tr.noterow td{display:block}}
+/* 面談シート（印刷） */
+.ivhead{margin-bottom:2.5mm}
+.ivhead td,.ivhead th{height:7mm;white-space:nowrap}
+.ivhead th{width:16mm;text-align:center}
+.ivnote{font-size:8.6pt;margin:0 0 2.5mm;padding:1.6mm 2.4mm;border:.6pt solid #000}
+.ivtable th{text-align:center;font-size:8pt}
+.ivtable td{vertical-align:top;font-size:8.6pt}
+.ivtable .n{width:7mm;text-align:center}
+.ivtable .s{width:12mm;text-align:center;font-size:11pt;font-weight:700}
+.ivtable .d{width:17mm;text-align:center;font-size:8pt}
+.ivtable .m{width:62mm;height:16mm}
+.ivbox{border:.6pt solid #000;margin-top:3mm}
+.ivbox .t{padding:1mm 1.6mm;border-bottom:.35pt dotted #000;font-size:8.6pt}
+.ivbox .b{min-height:30mm;padding:1.4mm 2mm;font-size:9pt;line-height:1.5;white-space:pre-wrap}
 .diffmark{font-size:12px;margin-left:4px}
 @media (max-width:760px){
   .etable thead{display:none}
@@ -243,8 +273,16 @@ h3.sec{font-size:16px;margin:0 0 10px}
   function staffForPeriod(pid) {
     return (S.data.staff || []).filter(function (s) { return s.active || evalOf(pid, s.id); });
   }
+  var FLAG_DIFF = 2;
+  function flagged(p, self, draft) {
+    return (p.items || []).filter(function (it) {
+      var a = Number((self || {})[it.no]), b = Number((draft || {})[it.no]);
+      return a && b && Math.abs(a - b) >= FLAG_DIFF;
+    });
+  }
+  function hasSelfInput(ev) { return Object.keys(ev.self_scores || {}).length || Object.keys(ev.answers || {}).length || ev.self_comment; }
   function statusOf(ev, p) {
-    if (!ev) return { key: "none", label: "未着手", cls: "b-none" };
+    if (!ev || (ev.status !== "submitted" && !hasSelfInput(ev))) return { key: "none", label: "未着手", cls: "b-none" };
     if (ev.status !== "submitted") return { key: "draft", label: "記入中", cls: "b-draft" };
     if (K.total(ev.first_scores, p.items).complete) return { key: "done", label: "評価済", cls: "b-done" };
     return { key: "sub", label: "提出済", cls: "b-sub" };
@@ -349,6 +387,7 @@ h3.sec{font-size:16px;margin:0 0 10px}
         '<td class="r num firstc">' + (fv == null ? '<span class="muted">–</span>' : fv + (tf.complete ? "" : '<span class="hint">（' + tf.n + "項目）</span>")) + "</td>" +
         '<td class="r num">' + (sv != null && fv != null && ts.complete && tf.complete ? diffHtml(sv, fv) : '<span class="muted">–</span>') + "</td>" +
         '<td class="num">' + esc(ev && ev.submitted_at ? K.fmtDateTime(ev.submitted_at) : "") + "</td>" +
+        '<td class="c">' + draftCell(p, ev) + "</td>" +
         '<td class="c">' + (ev && (ev.first_comment || ev.manager_comment) ? "✓" : "") + "</td></tr>";
     }).join("");
     var avg = function (a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; };
@@ -363,14 +402,19 @@ h3.sec{font-size:16px;margin:0 0 10px}
       "</div>" +
       '<div class="toolbar"><span class="sp hint">' + (p.is_open ? "🟢 職員の入力を受付中" : "⚪ 受付は終了しています（職員は入力できません）") + '　行をクリックすると内容の確認・第1次評価・コメント入力ができます。</span>' +
       '<button class="btn small" id="printAll">全員分を印刷</button><button class="btn small" id="csvBtn">CSV（Excel）出力</button></div>' +
-      '<div class="tablebox"><table class="list"><thead><tr><th>氏名</th><th>状態</th><th class="r">本人計</th><th class="r">第1次計</th><th class="r">差</th><th>提出日時</th><th class="c">コメント</th></tr></thead><tbody>' +
-      (body || '<tr><td colspan="7" class="muted">職員が登録されていません。「職員とURL」タブで登録してください。</td></tr>') + "</tbody></table></div>";
+      '<div class="tablebox"><table class="list"><thead><tr><th>氏名</th><th>状態</th><th class="r">本人計</th><th class="r">第1次計</th><th class="r">差</th><th>提出日時</th><th class="c">仮の評価</th><th class="c">コメント</th></tr></thead><tbody>' +
+      (body || '<tr><td colspan="8" class="muted">職員が登録されていません。「職員とURL」タブで登録してください。</td></tr>') + "</tbody></table></div>";
     $("printAll").onclick = function () {
       var list = rows.map(function (s) { return { period: p, staffName: s.name, ev: evalOf(p.id, s.id) }; }).filter(function (o) { return o.ev; });
       if (!list.length) { toast("印刷できる考課表がまだありません"); return; }
       K.printSheets(list);
     };
     $("csvBtn").onclick = function () { exportCsv(p, rows); };
+  }
+  function draftCell(p, ev) {
+    if (!ev || !Object.keys(ev.draft_scores || {}).length) return "";
+    var f = flagged(p, ev.self_scores, ev.draft_scores).length;
+    return f ? '<span class="badge b-flag">ずれ ' + f + "</span>" : '<span class="hint">済</span>';
   }
   $("tab-list").addEventListener("click", function (e) {
     var tr = e.target.closest("[data-open]"); if (tr) openDetail(tr.getAttribute("data-open"));
@@ -411,15 +455,18 @@ h3.sec{font-size:16px;margin:0 0 10px}
         answers: Object.assign({}, ev.answers || {}), self_comment: ev.self_comment || "",
         first_scores: Object.assign({}, ev.first_scores || {}), first_name: ev.first_name || nm.first || "",
         first_date: ev.first_date || "", first_comment: ev.first_comment || "",
-        manager_name: ev.manager_name || nm.manager || "", manager_comment: ev.manager_comment || ""
+        manager_name: ev.manager_name || nm.manager || "", manager_comment: ev.manager_comment || "",
+        draft_scores: Object.assign({}, ev.draft_scores || {}), draft_notes: Object.assign({}, ev.draft_notes || {}),
+        interview_memo: ev.interview_memo || ""
       }
     };
+    S.detail.mode = Object.keys(S.detail.v.first_scores).length ? "final" : "draft";
     S.tab = "detail"; render(); window.scrollTo(0, 0);
   }
 
   function scoreButtons(kind, no, cur) {
     return '<span class="mini ' + kind + '">' + [5, 4, 3, 2, 1].map(function (v) {
-      return '<button type="button" data-score="' + kind + '" data-no="' + no + '" data-v="' + v + '" class="' + (Number(cur) === v ? "on" : "") + '" aria-pressed="' + (Number(cur) === v) + '" aria-label="' + (kind === "self" ? "本人" : "第1次") + " " + no + "番 " + v + '">' + v + "</button>";
+      return '<button type="button" data-score="' + kind + '" data-no="' + no + '" data-v="' + v + '" class="' + (Number(cur) === v ? "on" : "") + '" aria-pressed="' + (Number(cur) === v) + '" aria-label="' + (kind === "self" ? "本人" : kind === "draft" ? "仮" : "第1次") + " " + no + "番 " + v + '">' + v + "</button>";
     }).join("") + "</span>";
   }
 
@@ -429,6 +476,9 @@ h3.sec{font-size:16px;margin:0 0 10px}
     var D = S.detail, v = D.v, ev = evalOf(p.id, s.id), st = statusOf(ev, p);
     var pp = prevPeriod(p), pev = pp ? evalOf(pp.id, s.id) : null;
     var ts = K.total(v.self_scores, p.items), tf = K.total(v.first_scores, p.items), max = p.items.length * 5;
+    var td = K.total(v.draft_scores, p.items), fl = flagged(p, v.self_scores, v.draft_scores), flagSet = {};
+    fl.forEach(function (it) { flagSet[it.no] = true; });
+    var draftMode = D.mode === "draft";
     var html = '<div class="dhead"><button class="btn small" id="backBtn">← 一覧へ</button><h2>' + esc(s.name) + '</h2><span class="badge ' + st.cls + '">' + st.label + "</span>" +
       '<span class="sp hint">' + esc(p.title) + (ev && ev.submitted_at ? "・提出 " + esc(K.fmtDateTime(ev.submitted_at)) : "") + "</span>" +
       '<button class="btn small" id="printOne">印刷（紙と同じ形）</button>' +
@@ -438,6 +488,8 @@ h3.sec{font-size:16px;margin:0 0 10px}
     html += '<div class="tiles">' +
       '<div class="tile self"><div class="k">本人計</div><div class="v num" id="tSelf">' + (ts.n ? ts.sum : "–") + "<small>/ " + max + "</small></div></div>" +
       '<div class="tile first"><div class="k">第1次計</div><div class="v num" id="tFirst">' + (tf.n ? tf.sum : "–") + "<small>/ " + max + "</small></div></div>" +
+      '<div class="tile draft"><div class="k">仮の評価 計</div><div class="v num">' + (td.n ? td.sum : "–") + "<small>/ " + max + "</small></div></div>" +
+      '<div class="tile"><div class="k">面談で聞く項目</div><div class="v num">' + (td.n ? fl.length : "–") + "<small>" + (td.n ? "個" : "") + "</small></div></div>" +
       '<div class="tile"><div class="k">差（第1次−本人）</div><div class="v num" id="tDiff">' + (ts.n && tf.n ? diffHtml(ts.sum, tf.sum) : "–") + "</div></div>" +
       '<div class="tile"><div class="k">前回 ' + (pp ? esc(pp.title.replace(/（.*$/, "")) : "") + '</div><div class="v num" style="font-size:18px">' +
         (pev ? '<span class="selfc">' + (K.total(pev.self_scores, pp.items).sum || "–") + '</span> / <span class="firstc">' + (K.total(pev.first_scores, pp.items).sum || "–") + "</span>" : '<span class="muted">なし</span>') +
@@ -446,21 +498,39 @@ h3.sec{font-size:16px;margin:0 0 10px}
     var hist = chrono().filter(function (x) { return evalOf(x.id, s.id); });
     if (hist.length >= 2) html += '<div class="card"><h3 class="sec">合計点の推移</h3>' + legendHtml() + chartSvg(hist, s.id) + "</div>";
 
-    html += '<div class="card" style="padding:0;overflow:hidden;margin-top:14px"><div style="padding:14px 16px 6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
-      '<h3 class="sec" style="margin:0;margin-right:auto">評価項目</h3>' +
-      '<label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="editSelf"' + (D.editSelf ? " checked" : "") + '> 本人記入欄も編集する（紙で提出された分の入力など）</label>' +
-      '<button class="btn small" id="copySelf" title="未入力の第1次を本人と同じ点で埋めます">未入力の第1次に本人の点をコピー</button></div>' +
-      '<table class="etable"><thead><tr><th class="no">№</th><th>評価の着眼点</th><th class="sc">本人</th><th class="sc">第１次</th><th class="prev">前回1次</th></tr></thead><tbody>';
+    html += '<div class="card" style="padding:0;overflow:hidden;margin-top:14px"><div style="padding:14px 16px 8px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center">' +
+      '<h3 class="sec" style="margin:0">評価項目</h3>' +
+      '<span class="seg" role="group" aria-label="評価の段階"><button type="button" data-mode="draft" aria-pressed="' + draftMode + '">① 面談前：仮の評価</button><button type="button" data-mode="final" aria-pressed="' + !draftMode + '">② 面談後：第1次評価（確定）</button></span>' +
+      '<span style="margin-left:auto;display:flex;flex-wrap:wrap;gap:8px">' +
+      (draftMode ? '<button class="btn small" id="printInterview">面談シートを印刷</button>'
+                 : '<button class="btn small" id="copyDraft" title="未入力の第1次を仮の評価で埋めます">仮の評価を第1次にコピー</button><button class="btn small" id="copySelf" title="未入力の第1次を本人と同じ点で埋めます">未入力の第1次に本人の点をコピー</button>') +
+      "</span></div>" +
+      '<p class="modehint">' + (draftMode
+        ? "面談の前に付ける仮の点です。<b>職員には見えず</b>、一覧の第1次計や印刷にも入りません。本人と" + FLAG_DIFF + "点以上ずれた項目は黄色になり、面談で聞くことをメモできます。"
+        : "面談で聞いた内容をもとに、第1次評価を確定します。「仮の評価を第1次にコピー」してから、変わったところだけ直すと早く済みます。") + "</p>" +
+      '<div style="padding:0 16px 10px"><label class="hint" style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="editSelf"' + (D.editSelf ? " checked" : "") + '> 本人記入欄も編集する（紙で提出された分の入力など）</label></div>' +
+      '<table class="etable"><thead><tr><th class="no">№</th><th>評価の着眼点</th><th class="sc">本人</th>' +
+      (draftMode ? '<th class="sc">仮の評価</th>' : '<th class="sc">仮</th><th class="sc">第１次</th>') + '<th class="prev">前回1次</th></tr></thead><tbody>';
+    var cols = draftMode ? 5 : 6;
     K.groupItems(p.items).forEach(function (g) {
-      html += '<tr class="catrow"><td colspan="5">' + K.nl2br(g.cat) + "</td></tr>";
+      html += '<tr class="catrow"><td colspan="' + cols + '">' + K.nl2br(g.cat) + "</td></tr>";
       g.items.forEach(function (it) {
-        var sv = v.self_scores[it.no], fv = v.first_scores[it.no];
+        var sv = v.self_scores[it.no], fv = v.first_scores[it.no], dv = v.draft_scores[it.no];
         var pf = pev && pp ? (pev.first_scores || {})[it.no] : null;
-        var d = sv && fv ? fv - sv : 0;
-        html += '<tr class="itemrow" id="row' + it.no + '"><td class="no">' + it.no + '</td><td class="txt">' + K.nl2br(it.text) + (it.sub ? '<span class="sub">' + K.nl2br(it.sub) + "</span>" : "") + (it.q ? '<span class="sub"><b>' + K.qLabel(it.q) + "</b></span>" : "") + "</td>" +
-          '<td class="sc" data-l="本人">' + (D.editSelf ? scoreButtons("self", it.no, sv) : '<span class="scorechip' + (sv ? "" : " empty") + '">' + (sv || "–") + "</span>") + "</td>" +
-          '<td class="sc" data-l="第１次">' + scoreButtons("first", it.no, fv) + '<span class="diffmark" id="dm' + it.no + '">' + (d ? (d > 0 ? '<span class="diff-pos">+' + d + "</span>" : '<span class="diff-neg">' + d + "</span>") : "") + "</span></td>" +
-          '<td class="prev">' + (pf || "") + "</td></tr>";
+        var d = sv && fv ? fv - sv : 0, isFlag = !!flagSet[it.no];
+        html += '<tr class="itemrow' + (isFlag ? " flagrow" : "") + '" id="row' + it.no + '"><td class="no">' + it.no + '</td><td class="txt">' + K.nl2br(it.text) + (it.sub ? '<span class="sub">' + K.nl2br(it.sub) + "</span>" : "") + (it.q ? '<span class="sub"><b>' + K.qLabel(it.q) + "</b></span>" : "") +
+          (isFlag ? '<span class="flagmark">● 面談で聞く（本人が' + (sv > dv ? "高い" : "低い") + "）</span>" : "") + "</td>" +
+          '<td class="sc" data-l="本人">' + (D.editSelf ? scoreButtons("self", it.no, sv) : '<span class="scorechip' + (sv ? "" : " empty") + '">' + (sv || "–") + "</span>") + "</td>";
+        if (draftMode) {
+          html += '<td class="sc" data-l="仮">' + scoreButtons("draft", it.no, dv) + "</td>";
+        } else {
+          html += '<td class="sc" data-l="仮"><span class="scorechip ' + (dv ? "draft" : "empty") + '">' + (dv || "–") + "</span></td>" +
+            '<td class="sc" data-l="第１次">' + scoreButtons("first", it.no, fv) + '<span class="diffmark" id="dm' + it.no + '">' + (d ? (d > 0 ? '<span class="diff-pos">+' + d + "</span>" : '<span class="diff-neg">' + d + "</span>") : "") + "</span></td>";
+        }
+        html += '<td class="prev">' + (pf || "") + "</td></tr>";
+        if (isFlag) {
+          html += '<tr class="noterow"><td></td><td colspan="' + (cols - 1) + '"><textarea data-dnote="' + it.no + '" maxlength="3000" placeholder="面談で聞くこと・聞いた内容のメモ（職員には見えません）">' + esc(v.draft_notes[it.no] || "") + "</textarea></td></tr>";
+        }
       });
     });
     html += "</tbody></table></div>";
@@ -480,6 +550,9 @@ h3.sec{font-size:16px;margin:0 0 10px}
     html += '<div class="qa"><div class="q">自己評価コメント' + (p.comment_heading ? '<span class="hint">　' + esc(p.comment_heading) + "</span>" : "") + "</div>" +
       (D.editSelf ? '<textarea data-f="self_comment" style="margin-top:6px">' + esc(v.self_comment) + "</textarea>" : '<div class="a' + (v.self_comment ? "" : " empty") + '">' + (v.self_comment ? esc(v.self_comment) : "（記入なし）") + "</div>") + "</div></div>";
 
+    html += '<div class="card"><h3 class="sec">面談メモ</h3><p class="hint" style="margin:0 0 6px">評価者だけが見られます。職員には見えず、考課表の印刷にも出ません。面談シートには印刷されます。</p>' +
+      '<textarea data-f="interview_memo" maxlength="3000" placeholder="例）国家試験の勉強を優先したいとのこと。行事は参加したい気持ちはある。">' + esc(v.interview_memo) + "</textarea></div>";
+
     // 評価者
     html += '<div class="card"><h3 class="sec">第１次評価者</h3><div class="frow"><label>氏名<input type="text" data-f="first_name" value="' + esc(v.first_name) + '" maxlength="40"></label>' +
       '<label>記入日<input type="date" data-f="first_date" value="' + esc(v.first_date) + '"></label></div>' +
@@ -493,6 +566,7 @@ h3.sec{font-size:16px;margin:0 0 10px}
     $("tab-detail").innerHTML = html;
   }
 
+  function markDirtyFlag() { S.detail.dirty = true; }
   function markDirty() {
     S.detail.dirty = true;
     $("dirtyMsg").innerHTML = '<span class="dirty-dot"></span>未保存の変更があります';
@@ -516,11 +590,21 @@ h3.sec{font-size:16px;margin:0 0 10px}
     var p = periodById(S.periodId), s = staffById(D.staffId);
     if (b.hasAttribute("data-score")) {
       var kind = b.getAttribute("data-score"), no = b.getAttribute("data-no"), val = Number(b.getAttribute("data-v"));
-      var bag = kind === "self" ? D.v.self_scores : D.v.first_scores;
+      var bag = kind === "self" ? D.v.self_scores : kind === "draft" ? D.v.draft_scores : D.v.first_scores;
       if (Number(bag[no]) === val) delete bag[no]; else bag[no] = val;
+      if (kind === "draft" || kind === "self") { markDirtyFlag(); var y = window.scrollY; renderDetail(); window.scrollTo(0, y); return; }
       Array.prototype.forEach.call(b.parentNode.children, function (x) { var on = Number(x.getAttribute("data-v")) === Number(bag[no]); x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); });
       if (kind === "first" && !D.v.first_date) { D.v.first_date = K.todayISO(); var fd = document.querySelector('[data-f="first_date"]'); if (fd) fd.value = D.v.first_date; }
       markDirty(); updateDetailTotals(); return;
+    }
+    if (b.hasAttribute("data-mode")) { D.mode = b.getAttribute("data-mode"); renderDetail(); return; }
+    if (b.id === "printInterview") { printInterview(p, s, D.v); return; }
+    if (b.id === "copyDraft") {
+      var cd = 0;
+      p.items.forEach(function (it) { if (!D.v.first_scores[it.no] && D.v.draft_scores[it.no]) { D.v.first_scores[it.no] = D.v.draft_scores[it.no]; cd++; } });
+      if (!cd) { toast("コピーする項目はありません"); return; }
+      if (!D.v.first_date) D.v.first_date = K.todayISO();
+      D.dirty = true; renderDetail(); toast(cd + " 項目をコピーしました（面談で変わったところを直してください）"); return;
     }
     if (b.id === "backBtn") { if (!confirmLeaveDetail()) return; S.tab = "list"; S.detail = null; render(); return; }
     if (b.id === "printOne") { K.printSheets([{ period: p, staffName: s.name, ev: Object.assign({}, evalOf(p.id, s.id) || {}, D.v) }]); return; }
@@ -550,7 +634,8 @@ h3.sec{font-size:16px;margin:0 0 10px}
   });
   $("tab-detail").addEventListener("input", function (e) {
     var D = S.detail; if (!D) return;
-    var f = e.target.getAttribute("data-f"), a = e.target.getAttribute("data-ans");
+    var f = e.target.getAttribute("data-f"), a = e.target.getAttribute("data-ans"), dn = e.target.getAttribute("data-dnote");
+    if (dn) { if (e.target.value.trim()) D.v.draft_notes[dn] = e.target.value; else delete D.v.draft_notes[dn]; markDirty(); }
     if (f) { D.v[f] = e.target.value; markDirty(); }
     if (a) { if (e.target.value.trim()) D.v.answers[a] = e.target.value; else delete D.v.answers[a]; markDirty(); }
     if (f === "years") { /* tile is refreshed on save */ }
@@ -574,11 +659,37 @@ h3.sec{font-size:16px;margin:0 0 10px}
     var btn = $("saveBtn"); if (btn) btn.disabled = true;
     return action("eval_save", args).then(function (res) {
       if (!res.ok) throw new Error("保存できませんでした（" + res.error + "）");
+      return action("draft_save", { period_id: p.id, staff_id: D.staffId, draft_scores: D.v.draft_scores, draft_notes: D.v.draft_notes, interview_memo: D.v.interview_memo });
+    }).then(function (res) {
+      if (!res.ok) throw new Error("仮の評価を保存できませんでした（" + res.error + "）");
       D.dirty = false;
       return refresh();
     }).then(function () {
       if (!silent) toast("保存しました");
     }, function (err) { if (btn) btn.disabled = false; toast(err.message); throw err; });
+  }
+
+  function printInterview(p, s, v) {
+    var fl = flagged(p, v.self_scores, v.draft_scores);
+    var rows = fl.map(function (it) {
+      var sv = Number(v.self_scores[it.no]), dv = Number(v.draft_scores[it.no]);
+      return '<tr><td class="n">' + it.no + "</td><td>" + K.nl2br(it.text) + (it.sub ? '<div style="font-size:7.4pt">' + K.nl2br(it.sub) + "</div>" : "") +
+        '<div style="margin-top:1.2mm;font-size:8pt">→「ここを' + sv + "にした理由を教えてください」</div></td>" +
+        '<td class="s">' + sv + '</td><td class="d">本人が<br>' + (sv > dv ? "高い" : "低い") + '</td><td class="m">' + K.nl2br(v.draft_notes[it.no] || "") + "</td></tr>";
+    }).join("");
+    var html = '<section class="sheet"><div class="ph"><h1>' + esc(p.title) + "　人事考課 面談シート（評価者用）</h1></div>" +
+      '<table class="ivhead"><tbody><tr><th>氏名</th><td style="width:45mm">' + esc(s.name) + '</td><th>面談日</th><td style="width:30mm">　　月　　日</td><th>評価者</th><td>' + esc(v.first_name || "") + "</td></tr></tbody></table>" +
+      '<p class="ivnote">本人の自己評価と、評価者の仮の評価が' + FLAG_DIFF + "点以上ずれている項目です（" + fl.length + "項目）。面談では評価者の点数は伝えず、本人がその点にした理由を聞いてください。この紙は本人に見せないでください。</p>" +
+      (fl.length ? '<table class="ivtable"><thead><tr><th>№</th><th>評価の着眼点</th><th>本人の点</th><th>ずれ</th><th>聞いた内容（メモ）</th></tr></thead><tbody>' + rows + "</tbody></table>"
+                 : '<p class="ivnote">2点以上ずれている項目はありません。</p>') +
+      '<div class="ivbox"><div class="t">そのほか聞きたいこと・面談メモ（困っていること、今後の目標など）</div><div class="b">' + esc(v.interview_memo || "") + "</div></div>" +
+      '<div class="ivbox"><div class="t">本人の自己評価コメント（参考）</div><div class="b" style="min-height:14mm">' + esc(v.self_comment || "") + "</div></div>" +
+      "</section>";
+    var box = $("printArea");
+    if (!box) { box = document.createElement("div"); box.id = "printArea"; document.body.appendChild(box); }
+    box.innerHTML = html;
+    document.body.classList.add("printing");
+    setTimeout(function () { window.print(); setTimeout(function () { document.body.classList.remove("printing"); }, 300); }, 60);
   }
 
   /* ========== 推移・比較 ========== */
