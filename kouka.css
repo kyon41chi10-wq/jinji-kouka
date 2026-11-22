@@ -173,3 +173,19 @@ dialog::backdrop{background:rgba(10,20,30,.45)}
 .plegend{margin-top:3mm;font-size:7.8pt}
 .plegend th{width:18mm;text-align:center}
 .plegend .n{width:5mm;text-align:center}
+/* 2ページ目が長いときの詰め具合（fitSheets が段階的に付ける） */
+.p2.fit1 .pq-a{min-height:14mm}
+.p2.fit1 .ptot .cv{height:14mm}
+.p2.fit2 .pq{margin-bottom:1.5mm}
+.p2.fit2 .pq-a,.p2.fit2 .ptot .cv{font-size:8.4pt;line-height:1.36}
+.p2.fit3 .pq-a{min-height:9mm;padding:.8mm 1.6mm}
+.p2.fit3 .ptot .cv{height:10mm}
+.p2.fit3 .pq-t{font-size:8pt;padding:.6mm 1.2mm}
+.p2.fit3 .ptot,.p2.fit3 .plegend{margin-top:2mm}
+.p2.fit4 .pq-a,.p2.fit4 .ptot .cv{font-size:7.8pt;line-height:1.3}
+.p2.fit4 .pq-a{min-height:6mm}
+.p2.fit5 .pq-a,.p2.fit5 .ptot .cv{font-size:7.3pt;line-height:1.26}
+.p2.fit5 .pq-t{font-size:7.5pt}
+.p2.fit5 .plegend{font-size:7pt}
+.p2.fit6 .pq-a,.p2.fit6 .ptot .cv{font-size:6.9pt;line-height:1.22}
+.p2.fit6 .pq-a{min-height:0}

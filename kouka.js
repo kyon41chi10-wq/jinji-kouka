@@ -128,7 +128,7 @@ var KOUKA = (function () {
     });
     html += "</tbody></table></section>";
 
-    html += '<section class="sheet">';
+    html += '<section class="sheet p2">';
     html += '<div class="ph"><h1>' + sheetTitle(p) + '</h1><span>2/2</span></div>';
     qs.forEach(function (q) {
       var ans = (ev.answers || {})[String(q.no)] || "";
@@ -149,10 +149,24 @@ var KOUKA = (function () {
     return html;
   }
 
+  /* 2ページ目（質問①〜コメント）がA4 1枚に収まらないときは、段階的に詰めて1枚に収める */
+  function fitSheets(box) {
+    var MM = 96 / 25.4, pageH = 275 * MM;            /* A4縦 297mm − 上下余白 9mm×2 − ゆとり4mm */
+    var keep = box.getAttribute("style");
+    box.style.cssText = "display:block;position:absolute;left:-10000px;top:0;width:188mm;visibility:hidden";
+    Array.prototype.forEach.call(box.querySelectorAll(".sheet.p2"), function (sec) {
+      sec.style.zoom = "";
+      for (var lv = 1; lv <= 6 && sec.scrollHeight > pageH; lv++) sec.classList.add("fit" + lv);
+      if (sec.scrollHeight > pageH) sec.style.zoom = String(Math.floor(pageH / sec.scrollHeight * 100) / 100);
+    });
+    if (keep == null) box.removeAttribute("style"); else box.setAttribute("style", keep);
+  }
+
   function printSheets(list) {
     var box = $("printArea");
     if (!box) { box = document.createElement("div"); box.id = "printArea"; document.body.appendChild(box); }
     box.innerHTML = list.map(renderPrint).join("");
+    fitSheets(box);
     document.body.classList.add("printing");
     setTimeout(function () {
       window.print();
@@ -163,6 +177,6 @@ var KOUKA = (function () {
   return {
     SCALE: SCALE, CIRCLED: CIRCLED, $: $, esc: esc, nl2br: nl2br, store: store, load: load, rpc: rpc,
     qLabel: qLabel, total: total, todayISO: todayISO, fmtMD: fmtMD, fmtYMD: fmtYMD, fmtDateTime: fmtDateTime,
-    yearsText: yearsText, groupItems: groupItems, renderPrint: renderPrint, printSheets: printSheets
+    yearsText: yearsText, groupItems: groupItems, renderPrint: renderPrint, printSheets: printSheets, fitSheets: fitSheets
   };
 })();
