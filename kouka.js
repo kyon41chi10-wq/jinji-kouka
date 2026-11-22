@@ -103,7 +103,7 @@ var KOUKA = (function () {
     var p = o.period, ev = o.ev || {}, items = p.items || [], qs = p.questions || [];
     var self = ev.self_scores || {}, first = ev.first_scores || {};
     var tSelf = total(self, items), tFirst = total(first, items);
-    var html = '<section class="sheet">';
+    var html = '<section class="sheet p1">';
     html += '<div class="ph"><h1>' + sheetTitle(p) + '</h1><span>1/2</span></div>';
     html += '<table class="phead"><tbody>' +
       '<tr><th class="role">本人</th><th>記入日</th><td class="date">' + (fmtMD(ev.self_date) || "　　月　　日") + '</td><th>氏名</th><td class="name">' + esc(o.staffName) + '</td><th class="seal">印</th>' +
@@ -126,7 +126,13 @@ var KOUKA = (function () {
           '<tr class="r2"><td class="c-who">第１次</td>' + [5, 4, 3, 2, 1].map(function (v) { return circle(v, first[it.no]); }).join("") + "</tr>";
       });
     });
-    html += "</tbody></table></section>";
+    html += "</tbody></table>";
+    html += '<table class="plegend"><tbody>' +
+      '<tr><th rowspan="3">５段階評価</th><td class="n">1</td><td>' + SCALE[4].long + '</td><td class="n">4</td><td>' + SCALE[1].long + "</td></tr>" +
+      '<tr><td class="n">2</td><td>' + SCALE[3].long + '</td><td class="n">5</td><td>' + SCALE[0].long + "</td></tr>" +
+      '<tr><td class="n">3</td><td colspan="3">' + SCALE[2].long + "</td></tr>" +
+      "</tbody></table>";
+    html += "</section>";
 
     html += '<section class="sheet p2">';
     html += '<div class="ph"><h1>' + sheetTitle(p) + '</h1><span>2/2</span></div>';
@@ -140,23 +146,18 @@ var KOUKA = (function () {
       '<tr><th class="tl">第１次計</th><td class="tv">' + (tFirst.n ? tFirst.sum : "") + '</td><th class="cl">１次評価者<br>コメント</th><td class="cv">' + nl2br(ev.first_comment || "") + "</td></tr>" +
       '<tr><td class="blank" colspan="2"></td><th class="cl">管理者<br>コメント</th><td class="cv">' + nl2br(ev.manager_comment || "") + "</td></tr>" +
       "</tbody></table>";
-    html += '<table class="plegend"><tbody>' +
-      '<tr><th rowspan="3">５段階評価</th><td class="n">1</td><td>' + SCALE[4].long + '</td><td class="n">4</td><td>' + SCALE[1].long + "</td></tr>" +
-      '<tr><td class="n">2</td><td>' + SCALE[3].long + '</td><td class="n">5</td><td>' + SCALE[0].long + "</td></tr>" +
-      '<tr><td class="n">3</td><td colspan="3">' + SCALE[2].long + "</td></tr>" +
-      "</tbody></table>";
     html += "</section>";
     return html;
   }
 
-  /* 2ページ目（質問①〜コメント）がA4 1枚に収まらないときは、段階的に詰めて1枚に収める */
+  /* 各ページがA4 1枚に収まらないときは詰めて1枚に収める（2ページ目は段階的に、1ページ目は縮小のみ） */
   function fitSheets(box) {
     var MM = 96 / 25.4, pageH = 275 * MM;            /* A4縦 297mm − 上下余白 9mm×2 − ゆとり4mm */
     var keep = box.getAttribute("style");
     box.style.cssText = "display:block;position:absolute;left:-10000px;top:0;width:188mm;visibility:hidden";
-    Array.prototype.forEach.call(box.querySelectorAll(".sheet.p2"), function (sec) {
+    Array.prototype.forEach.call(box.querySelectorAll(".sheet.p1,.sheet.p2"), function (sec) {
       sec.style.zoom = "";
-      for (var lv = 1; lv <= 6 && sec.scrollHeight > pageH; lv++) sec.classList.add("fit" + lv);
+      if (sec.classList.contains("p2")) for (var lv = 1; lv <= 6 && sec.scrollHeight > pageH; lv++) sec.classList.add("fit" + lv);
       if (sec.scrollHeight > pageH) sec.style.zoom = String(Math.floor(pageH / sec.scrollHeight * 100) / 100);
     });
     if (keep == null) box.removeAttribute("style"); else box.setAttribute("style", keep);
